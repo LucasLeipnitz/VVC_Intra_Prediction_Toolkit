@@ -1,3 +1,4 @@
+import re
 path_tests = "./output/tests/"
 
 def map_pixel_to_reference(input_pixels, mode_tb, lower_limit, upper_limit):
@@ -193,3 +194,6 @@ def automated_tests(seed, lower_limit, upper_limit):
         print(key, value)'''
 
     return input
+
+def verify_arquitecture_limitation(equations_set, n_buffers, n_adders):
+    pass

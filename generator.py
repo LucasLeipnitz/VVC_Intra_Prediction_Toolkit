@@ -2,6 +2,9 @@ import pandas as pd
 import math as mh
 import re
 from collections import defaultdict
+
+from numpy.f2py.auxfuncs import throw_error
+
 from transform_block import TransformBlock
 
 path = "./"
@@ -329,56 +332,123 @@ def calculate_samples(modes, angles, size, normalize=0):
         df.to_excel(excel_writer=path_samples + "ref_" + str(size) + ".xlsx")
 
 
-def calculate_equations(modes, angles, size, coefficients):
-    for i, j in zip(modes, angles):
-        tb = TransformBlock(size, size, i, j, 0, size * 2 + 2, size * 2 + 2, 0)
-        equations = tb.calculate_equations_mode()
-        equations_constants = []
-        equations_constants_set = set()
-        reused_equation = 0
-        columns = []
-        line_index = 0
-        for line in equations:
-            columns.append(line_index)
-            line_index += 1
-            line_constants = []
-            for equation in line:
-                equation_constants = ""
-                for k in range(4):
-                    p, index, ref = re.findall(r'-?\d+', equation.split('+')[
-                        k])  # get p[index] and ref from string containing and put it in two separately variables
-                    if (p + '[' + index + ']' not in ft_coefficients[coefficients]):
-                        p, index = simmetry_rule(p, index,
-                                                 coefficients)  # transform in a value that exists in the coefficients by the simmetry rule
+def calculate_equations(mode, angle, size, coefficients, reuse = False):
+    tb = TransformBlock(size, size, mode, angle, 0, size * 2 + 2, size * 2 + 2, 0)
+    equations = tb.calculate_equations_mode()
+    equations_constants = []
+    equations_constants_reuse = []
+    equations_constants_set = set()
+    reused_equations = 0
+    columns = []
+    line_index = 0
+    for line in equations:
+        columns.append(line_index)
+        line_index += 1
+        line_constants = []
+        line_constants_reuse = []
+        for equation in line:
+            equation_constants = ""
+            for k in range(4):
+                p, index, ref = re.findall(r'-?\d+', equation.split('+')[
+                    k])  # get p[index] and ref from string containing and put it in two separately variables
+                if (p + '[' + index + ']' not in ft_coefficients[coefficients]):
+                    p, index = simmetry_rule(p, index,
+                                             coefficients)  # transform in a value that exists in the coefficients by the simmetry rule
 
-                    value = ft_coefficients[coefficients][p + '[' + index + ']']
-                    equation_constants += '(' + str(value) + ')*' + "ref[" + str(ref) + '] + '
+                value = ft_coefficients[coefficients][p + '[' + index + ']']
+                equation_constants += '(' + str(value) + ')*' + "ref[" + str(ref) + '] + '
 
-                equation_constants = equation_constants[:-3]
-                line_constants.append(equation_constants)
+            equation_constants = equation_constants[:-3]
+            if equation_constants in equations_constants_set:
+                reused_equations += 1
+                line_constants_reuse.append("REUSED:(" + equation_constants + ")")
+            else:
+                line_constants_reuse.append(equation_constants)
 
-                if equation_constants in equations_constants_set:
-                    reused_equation += 1
+            equations_constants_set.add(equation_constants)
+            line_constants.append(equation_constants)
 
-                equations_constants_set.add(equation_constants)
+        equations_constants.append(line_constants)
+        equations_constants_reuse.append(line_constants_reuse)
 
-            equations_constants.append(line_constants)
+    equations_list = equations_constants
+    if reuse:
+        equations_list = equations_constants_reuse
 
-        df = pd.DataFrame(list(zip(*equations_constants)), columns=columns)
-        excel_writer = pd.ExcelWriter(
-            path_equations + "equations_constants_" + coefficients + "_" + str(i) + "_" + str(size) + "x" + str(
-                size) + ".xlsx", engine='xlsxwriter')
-        df.to_excel(excel_writer, sheet_name='equations', index=False, na_rep='NaN')
+    df = pd.DataFrame(list(zip(*equations_list)), columns=columns)
+    excel_writer = pd.ExcelWriter(
+        path_equations + "equations_constants_" + coefficients + "_" + str(mode) + "_" + str(size) + "x" + str(
+            size) + ".xlsx", engine='xlsxwriter')
+    df.to_excel(excel_writer, sheet_name='equations', index=False, na_rep='NaN')
 
-        # Auto-adjust columns' width
-        for column in df:
-            column_width = 70
-            col_iidx = df.columns.get_loc(column)
-            excel_writer.sheets['equations'].set_column(col_iidx, col_iidx, column_width)
+    # Auto-adjust columns' width
+    for column in df:
+        column_width = 70
+        col_iidx = df.columns.get_loc(column)
+        excel_writer.sheets['equations'].set_column(col_iidx, col_iidx, column_width)
 
-        excel_writer._save()
-        print(len(equations_constants_set))
-        print(reused_equation)
+    excel_writer._save()
+
+    '''for equation in equations_constants_set:
+        print(equation)
+    print(len(equations_constants_set))
+    print(reused_equations)'''
+
+    return equations, equations_constants_set
+
+def get_reference_number(equation):
+    x = re.search("ref\\[-*[0-9]*", equation)
+    y = re.findall("-*[0-9]+", x.group())
+    return int(y[0])
+
+def find_superior_ref_equation(equations_set):
+    greater_value = -mh.inf
+    greater_equation = None
+    for equation in equations_set:
+        value = get_reference_number(equation)
+        if value > greater_value:
+            greater_value = value
+            greater_equation = equation
+
+    return greater_equation
+
+def generate_sorted_equations_set(equations_set, print_set):
+    sorted_set = []
+    while not equations_set == set():
+        greater_equation = find_superior_ref_equation(equations_set)
+        equations_set.remove(greater_equation)
+        sorted_set.append(greater_equation)
+
+    if print_set:
+        i = 0
+        for equation in sorted_set:
+            i += 1
+            print(i, equation)
+
+    return sorted_set
+
+def generate_control_sequence(sorted_equations_set, print_sequence):
+    control_sequence = ["fetch", "fetch", "fetch", "fetch"]
+    first_equation = sorted_equations_set[0]
+    previous_value = get_reference_number(first_equation)
+
+    for equation in sorted_equations_set[1:]:
+        value = get_reference_number(equation)
+        if value == previous_value:
+            control_sequence.append("stall-calculate")
+        elif value < previous_value:
+            control_sequence.append("fetch-calculate")
+            previous_value = value
+        else:
+            raise Exception("Equation set not sorted")
+
+    control_sequence.append("calculate")
+
+    if print_sequence:
+        i = -4
+        for instruction in control_sequence:
+            i += 1
+            print(i, instruction)
 
 
 def transform_coefficients(n_average_fc, n_average_fg, print_table, print_values_c):
