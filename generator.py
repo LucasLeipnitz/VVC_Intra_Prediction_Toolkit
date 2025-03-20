@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import math as mh
 import re
@@ -464,10 +465,6 @@ def transform_coefficients(n_average_fc, n_average_fg, print_table, print_values
             for element in range(0, n_average_fc):
                 fc_heuristic[str(line + element) + '[' + str(column) + ']'] = average
 
-    '''print("############## fC #################")
-    for key in fc_heuristic:
-        print("%s : %s" % (key, fc_heuristic[key]))'''
-
     for column in range(0, 4):
         for line in range(0, 32, n_average_fg):
             average = 0
@@ -480,43 +477,177 @@ def transform_coefficients(n_average_fc, n_average_fg, print_table, print_values
             for element in range(0, n_average_fg):
                 fg_heuristic[str(line + element) + '[' + str(column) + ']'] = average
 
-    '''print("############## fG #################")
-    for key in fg_heuristic:
-        print("%s : %s" % (key, fg_heuristic[key]))'''
+    fc_column_list = [[] for _ in range(4)]
+    fg_column_list = [[] for _ in range(4)]
+    fc_column_list_normalized = [[] for _ in range(4)]
+    fg_column_list_normalized = [[] for _ in range(4)]
+    filter_column_list_normalized = [[] for _ in range(4)]
 
-    if (print_table):
+    for line in range(0, 32, n_average_fc):
+        index_0 = str(line) + "[" + str(0) + "]"
+        index_1 = str(line) + "[" + str(1) + "]"
+        index_2 = str(line) + "[" + str(2) + "]"
+        index_3 = str(line) + "[" + str(3) + "]"
+
+        fc_column_list[0].append(fc_heuristic[index_0])
+        if fc_heuristic[index_0] not in fc_column_list_normalized[0] and fc_heuristic[index_0] != 0:
+            fc_column_list_normalized[0].append(fc_heuristic[index_0])
+        if fc_heuristic[index_0] not in  filter_column_list_normalized[0] and fc_heuristic[index_0] != 0:
+            filter_column_list_normalized[0].append(fc_heuristic[index_0])
+
+        fc_column_list[1].append(fc_heuristic[index_1])
+        if fc_heuristic[index_1] not in fc_column_list_normalized[1] and fc_heuristic[index_1] != 0:
+            fc_column_list_normalized[1].append(fc_heuristic[index_1])
+        if fc_heuristic[index_1] not in  filter_column_list_normalized[1] and fc_heuristic[index_1] != 0:
+            filter_column_list_normalized[1].append(fc_heuristic[index_1])
+
+        fc_column_list[2].append(fc_heuristic[index_2])
+        if fc_heuristic[index_2] not in fc_column_list_normalized[2] and fc_heuristic[index_2] != 0:
+            fc_column_list_normalized[2].append(fc_heuristic[index_2])
+        if fc_heuristic[index_2] not in filter_column_list_normalized[2] and fc_heuristic[index_2] != 0:
+            filter_column_list_normalized[2].append(fc_heuristic[index_2])
+
+        fc_column_list[3].append(fc_heuristic[index_3])
+        if fc_heuristic[index_3] not in fc_column_list_normalized[3] and fc_heuristic[index_3] != 0:
+            fc_column_list_normalized[3].append(fc_heuristic[index_3])
+        if fc_heuristic[index_3] not in  filter_column_list_normalized[3] and fc_heuristic[index_3] != 0:
+            filter_column_list_normalized[3].append(fc_heuristic[index_3])
+
+    for line in range(0, 32, n_average_fg):
+        index_0 = str(line) + "[" + str(0) + "]"
+        index_1 = str(line) + "[" + str(1) + "]"
+        index_2 = str(line) + "[" + str(2) + "]"
+        index_3 = str(line) + "[" + str(3) + "]"
+
+        fg_column_list[0].append(fg_heuristic[index_0])
+        if fg_heuristic[index_0] not in fg_column_list_normalized[0] and fg_heuristic[index_0] != 0:
+            fg_column_list_normalized[0].append(fg_heuristic[index_0])
+        if fg_heuristic[index_0] not in  filter_column_list_normalized[0] and fg_heuristic[index_0] != 0:
+            filter_column_list_normalized[0].append(fg_heuristic[index_0])
+
+        fg_column_list[1].append(fg_heuristic[index_1])
+        if fg_heuristic[index_1] not in fg_column_list_normalized[1] and fg_heuristic[index_1] != 0:
+            fg_column_list_normalized[1].append(fg_heuristic[index_1])
+        if fg_heuristic[index_1] not in  filter_column_list_normalized[1] and fg_heuristic[index_1] != 0:
+            filter_column_list_normalized[1].append(fg_heuristic[index_1])
+
+        fg_column_list[2].append(fg_heuristic[index_2])
+        if fg_heuristic[index_2] not in fg_column_list_normalized[2] and fg_heuristic[index_2] != 0:
+            fg_column_list_normalized[2].append(fg_heuristic[index_2])
+        if fg_heuristic[index_2] not in  filter_column_list_normalized[2] and fg_heuristic[index_2] != 0:
+            filter_column_list_normalized[2].append(fg_heuristic[index_2])
+
+        fg_column_list[3].append(fg_heuristic[index_3])
+        if fg_heuristic[index_3] not in fg_column_list_normalized[3] and fg_heuristic[index_3] != 0:
+            fg_column_list_normalized[3].append(fg_heuristic[index_3])
+        if fg_heuristic[index_3] not in  filter_column_list_normalized[3] and fg_heuristic[index_3] != 0:
+            filter_column_list_normalized[3].append(fg_heuristic[index_3])
+
+    filter_coefficients = []
+    filter_coefficients_normalized = []
+    for line in range(0, 32, n_average_fc):
+        index_0 = str(line) + "[" + str(0) + "]"
+        index_1 = str(line) + "[" + str(1) + "]"
+        index_2 = str(line) + "[" + str(2) + "]"
+        index_3 = str(line) + "[" + str(3) + "]"
+
+        filter_coefficients.append(fc_heuristic[index_0])
+        filter_coefficients.append(fc_heuristic[index_1])
+        filter_coefficients.append(fc_heuristic[index_2])
+        filter_coefficients.append(fc_heuristic[index_3])
+
+        if fc_heuristic[index_0] not in filter_coefficients_normalized and fc_heuristic[index_0] != 0:
+            filter_coefficients_normalized.append(fc_heuristic[index_0])
+        if fc_heuristic[index_1] not in filter_coefficients_normalized and fc_heuristic[index_1] != 0:
+            filter_coefficients_normalized.append(fc_heuristic[index_1])
+        if fc_heuristic[index_2] not in filter_coefficients_normalized and fc_heuristic[index_2] != 0:
+            filter_coefficients_normalized.append(fc_heuristic[index_2])
+        if fc_heuristic[index_3] not in filter_coefficients_normalized and fc_heuristic[index_3] != 0:
+            filter_coefficients_normalized.append(fc_heuristic[index_3])
+
+    for line in range(0, 32, n_average_fg):
+        index_0 = str(line) + "[" + str(0) + "]"
+        index_1 = str(line) + "[" + str(1) + "]"
+        index_2 = str(line) + "[" + str(2) + "]"
+        index_3 = str(line) + "[" + str(3) + "]"
+
+        filter_coefficients.append(fg_heuristic[index_0])
+        filter_coefficients.append(fg_heuristic[index_1])
+        filter_coefficients.append(fg_heuristic[index_2])
+        filter_coefficients.append(fg_heuristic[index_3])
+
+        if fg_heuristic[index_0] not in filter_coefficients_normalized and fg_heuristic[index_0] != 0:
+            filter_coefficients_normalized.append(fc_heuristic[index_0])
+        if fg_heuristic[index_1] not in filter_coefficients_normalized and fg_heuristic[index_1] != 0:
+            filter_coefficients_normalized.append(fc_heuristic[index_1])
+        if fg_heuristic[index_2] not in filter_coefficients_normalized and fg_heuristic[index_2] != 0:
+            filter_coefficients_normalized.append(fc_heuristic[index_2])
+        if fg_heuristic[index_3] not in filter_coefficients_normalized and fg_heuristic[index_3] != 0:
+            filter_coefficients_normalized.append(fc_heuristic[index_3])
+
+
+    filter_column_list = []
+    for fc_column, fg_column in zip(fc_column_list, fg_column_list):
+        filter_column_list.append(fc_column + fg_column)
+
+    if print_table:
         print("#####################fC################")
+        #fc_column_sets = [set(), set(), set(), set()]
         for line in range(0, 32):
             index_0 = str(line) + "[" + str(0) + "]"
             index_1 = str(line) + "[" + str(1) + "]"
             index_2 = str(line) + "[" + str(2) + "]"
             index_3 = str(line) + "[" + str(3) + "]"
+            '''fc_column_sets[0].add(fc_heuristic[index_0])
+            fc_column_sets[1].add(fc_heuristic[index_1])
+            fc_column_sets[2].add(fc_heuristic[index_2])
+            fc_column_sets[3].add(fc_heuristic[index_3])'''
             print(index_0, fc_heuristic[index_0], get_coefficient_value("fc", index_0), index_1, fc_heuristic[index_1],
                   get_coefficient_value("fc", index_1), index_2, fc_heuristic[index_2],
                   get_coefficient_value("fc", index_2), index_3, fc_heuristic[index_3],
                   get_coefficient_value("fc", index_3))
 
+        #print(fc_column_sets)
+        print(fc_column_list)
         print(set(fc_coefficients.values()), len(set(fc_coefficients.values())))
         print(set(fc_heuristic.values()), len(set(fc_heuristic.values())))
         print("#####################fG################")
+        #fg_column_sets = [set(),set(),set(),set()]
         for line in range(0, 32):
             index_0 = str(line) + "[" + str(0) + "]"
             index_1 = str(line) + "[" + str(1) + "]"
             index_2 = str(line) + "[" + str(2) + "]"
             index_3 = str(line) + "[" + str(3) + "]"
+            '''fg_column_sets[0].add(fg_heuristic[index_0])
+            fg_column_sets[1].add(fg_heuristic[index_1])
+            fg_column_sets[2].add(fg_heuristic[index_2])
+            fg_column_sets[3].add(fg_heuristic[index_3])'''
             print(index_0, fg_heuristic[index_0], get_coefficient_value("fg", index_0), index_1, fg_heuristic[index_1],
                   get_coefficient_value("fg", index_1), index_2, fg_heuristic[index_2],
                   get_coefficient_value("fg", index_2), index_3, fg_heuristic[index_3],
                   get_coefficient_value("fg", index_3))
 
-        print(set(fg_coefficients.values()), len(set(fg_coefficients.values())))
-        print(set(fg_heuristic.values()), len(set(fg_heuristic.values())))
 
-        print("################(fC + fG) Set################")
-        print(set(fg_heuristic.values()).union(set(fc_heuristic.values())),
-              len(set(fg_heuristic.values()).union(set(fc_heuristic.values()))))
+        print("################ fC Column List ################")
+        print(fc_column_list, len(fc_column_list[0]), len(fc_column_list[1]), len(fc_column_list[2]), len(fc_column_list[3]))
+        print(fc_column_list_normalized, len(fc_column_list_normalized[0]), len(fc_column_list_normalized[1]), len(fc_column_list_normalized[2]) ,len(fc_column_list_normalized[3]))
 
-    if (print_values_c):
+        print("################ fG Column List ################")
+        print(fg_column_list, len(fg_column_list[0]), len(fg_column_list[1]), len(fg_column_list[2]), len(fg_column_list[3]))
+        print(fg_column_list_normalized, len(fg_column_list_normalized[0]), len(fg_column_list_normalized[1]), len(fg_column_list_normalized[2]) ,len(fg_column_list_normalized[3]))
+
+        print("################ (fC + fG) List ################")
+        print(filter_column_list, len(filter_column_list[0]), len(filter_column_list[1]), len(filter_column_list[2]), len(filter_column_list[3]))
+        print(filter_column_list_normalized, len(filter_column_list_normalized[0]), len(filter_column_list_normalized[1]), len(filter_column_list_normalized[2]), len(filter_column_list_normalized[3]))
+
+        print("################ (fC + fG) List ################")
+        print(filter_coefficients, len(filter_coefficients))
+        print(filter_coefficients_normalized, len(filter_coefficients_normalized))
+
+        print("################ (fC + fG) Set ################")
+        print(set(fg_heuristic.values()).union(set(fc_heuristic.values())),len(set(fg_heuristic.values()).union(set(fc_heuristic.values()))))
+
+    if print_values_c:
         print("#####################fC################")
         i = 0
         for line in range(0, 32):
@@ -538,3 +669,58 @@ def transform_coefficients(n_average_fc, n_average_fg, print_table, print_values
             index_3 = str(line) + "[" + str(3) + "]"
             print("{", str(fg_heuristic[index_0]) + ", " + str(fg_heuristic[index_1]) + ", " + str(
                 fg_heuristic[index_2]) + ", " + str(fg_heuristic[index_3]), "},")
+
+    return filter_column_list, filter_column_list_normalized, filter_coefficients, filter_coefficients_normalized
+
+def generate_mcm_blocks(filter_column_list_normalized):
+    mcm_id = 0
+    components = ""
+    for column in filter_column_list_normalized:
+        components += "COMPONENT MCM_" + str(mcm_id) + "\n\tPORT (\n\t\tX : in std_logic_vector ( 7 downto 0 );"
+        y_id = 1
+        for coefficient in column[:-1]:
+            components += "\n\t\tY" + str(y_id) + ", -- Y" + str(y_id) + " = ref[" + str(mcm_id) + "]*" + str(coefficient)
+            y_id += 1
+
+        components += "\n\t\tY" + str(y_id) + " : out std_logic_vector ( 15 downto 0 ) -- Y" + str(y_id) + " = ref[" + str(mcm_id) + "]*" + str(column[-1]) + "\n\t);\nEND COMPONENT;\n\n" #last one
+
+        mcm_id += 1
+
+    print(components)
+
+def generate_port_mapping(filter_column_list_normalized):
+    input_map = [{},{},{},{}]
+    input_index = 0
+    port_mapping = "BEGIN"
+    m_index = 0
+    for filter_column, input_column  in zip(filter_column_list_normalized, input_map):
+        port_mapping += "\n\tm" + str(m_index) + " : MCM_" + str(m_index)
+        port_mapping += "\n\tPORT MAP ( X => ref(" + str(m_index) + ")"
+        y_id = 1
+        for coefficient in filter_column:
+            port_mapping += ", Y" + str(y_id) + " => input(" + str(input_index) + ")"
+            input_column[coefficient] = input_index
+            input_index += 1
+            y_id += 1
+        port_mapping += " );"
+
+    port_mapping += "\n"
+    print(port_mapping)
+
+    return input_map
+
+
+def generate_mux(filter_column_list, input_map):
+    mux_fg_fc = "case control is\n"
+    size = len(filter_column_list[0])
+    control_size = int(mh.log2(size))
+    for j in range(len(filter_column_list[0])):
+        line = np.array(filter_column_list)[:, j]
+        mux_fg_fc += "\twhen " + str(bin(j)[2:].zfill(control_size)) + " =>\n"
+        for i,coefficient in zip(range(0,4),line):
+            if coefficient == 0:
+                mux_fg_fc += "\t\teq_input(" + str(i) + ") <= " + '"' + "0000000000000000" + '"' + " -- input " + str(i) + " <= 0 * ref[" + str(i) + "]\n"
+            else:
+                mux_fg_fc += "\t\teq_input(" + str(i) + ") <= input(" + str(input_map[i][coefficient]) + ") -- input " + str(i) + " <= " + str(coefficient) + " * ref[" + str(i) + "]\n"
+
+    print(mux_fg_fc)

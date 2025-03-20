@@ -3,19 +3,21 @@ import verifier as ver
 
 path_input_modes = "./input/modes/"
 
-option = 3
+option = 4
 ##modes = gen.all_modes
-input_modes = [27]
-block_size = 4
+input_modes = [35]
+block_size = 16
 assert_equals = 1
 normalize = 1
 heuristic_on = True
+n_average_fc = 8
+n_average_fg = 8
 
 def main(modes, control = -1):
     
     angles = gen.map_modes_to_angles(modes)
 
-    gen.transform_coefficients(8, 8,False, False)
+    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized = gen.transform_coefficients(n_average_fc, n_average_fg,True, False)
 
     match control:
         case 0:
@@ -32,6 +34,10 @@ def main(modes, control = -1):
                 sorted_equations_set = gen.generate_sorted_equations_set(equations_set, True)
                 gen.generate_control_sequence(sorted_equations_set,True)
         case 4:
+            gen.generate_mcm_blocks(filter_column_list_normalized)
+            input_map = gen.generate_port_mapping(filter_column_list_normalized)
+            gen.generate_mux(filter_column_list, input_map)
+        case 5:
             if assert_equals:
                 test_input = ver.automated_tests(196, -66, 38)
                 ver.assert_equals_planar(test_input, 32)
