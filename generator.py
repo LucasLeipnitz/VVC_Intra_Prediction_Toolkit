@@ -703,6 +703,7 @@ def generate_port_mapping(filter_column_list_normalized):
             input_index += 1
             y_id += 1
         port_mapping += " );"
+        m_index += 1
 
     port_mapping += "\n"
     print(port_mapping)
@@ -716,11 +717,13 @@ def generate_mux(filter_column_list, input_map):
     control_size = int(mh.log2(size))
     for j in range(len(filter_column_list[0])):
         line = np.array(filter_column_list)[:, j]
-        mux_fg_fc += "\twhen " + str(bin(j)[2:].zfill(control_size)) + " =>\n"
+        mux_fg_fc += "\twhen " + '"' + str(bin(j)[2:].zfill(control_size)) + '"' + "=>\n"
         for i,coefficient in zip(range(0,4),line):
             if coefficient == 0:
-                mux_fg_fc += "\t\teq_input(" + str(i) + ") <= " + '"' + "0000000000000000" + '"' + " -- input " + str(i) + " <= 0 * ref[" + str(i) + "]\n"
+                mux_fg_fc += "\t\teq_input(" + str(i) + ") <= " + '"' + "0000000000000000" + '"' + "; -- input " + str(i) + " <= 0 * ref[" + str(i) + "]\n"
             else:
-                mux_fg_fc += "\t\teq_input(" + str(i) + ") <= input(" + str(input_map[i][coefficient]) + ") -- input " + str(i) + " <= " + str(coefficient) + " * ref[" + str(i) + "]\n"
+                mux_fg_fc += "\t\teq_input(" + str(i) + ") <= input(" + str(input_map[i][coefficient]) + "); -- input " + str(i) + " <= " + str(coefficient) + " * ref[" + str(i) + "]\n"
+
+    mux_fg_fc += "\twhen others => -- default case for not using latch\n\t\teq_input(0) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(1) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(2) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(3) <= " + '"' + "0000000000000000" + '"' + ";\n"
 
     print(mux_fg_fc)
