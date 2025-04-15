@@ -12,12 +12,17 @@ normalize = 1
 heuristic_on = True
 n_average_fc = 8
 n_average_fg = 8
+n_samples = 4
 
 def main(modes, control = -1):
     
     angles = gen.map_modes_to_angles(modes)
 
-    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized = gen.transform_coefficients(n_average_fc, n_average_fg,True, False)
+    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized, filter_coefficients_set = gen.transform_coefficients(n_average_fc, n_average_fg,True, False)
+
+    if n_samples >= 4:
+        filter_column_list = gen.generate_coefficients_for_parallel_prediction(filter_column_list, n_samples, True)
+        filter_column_list_normalized = gen.generate_coefficients_for_parallel_prediction(filter_column_list_normalized, n_samples, False)
 
     match control:
         case 0:
@@ -35,9 +40,14 @@ def main(modes, control = -1):
                 gen.generate_control_sequence(sorted_equations_set,True)
         case 4:
             gen.generate_mcm_blocks(filter_column_list_normalized)
-            input_map = gen.generate_port_mapping(filter_column_list_normalized)
-            gen.generate_mux(filter_column_list, input_map)
+            input_map = gen.generate_port_mapping(filter_column_list_normalized, n_samples)
+            if n_samples < 4:
+                gen.generate_mux(filter_column_list, input_map)
+            else:
+                gen.generate_mux_n_samples(filter_column_list, input_map, n_samples)
         case 5:
+            gen.generate_rom(filter_column_list, filter_coefficients_set)
+        case 6:
             if assert_equals:
                 test_input = ver.automated_tests(196, -66, 38)
                 ver.assert_equals_planar(test_input, 32)

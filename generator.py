@@ -556,13 +556,13 @@ def transform_coefficients(n_average_fc, n_average_fg, print_table, print_values
         filter_coefficients.append(fc_heuristic[index_2])
         filter_coefficients.append(fc_heuristic[index_3])
 
-        if fc_heuristic[index_0] not in filter_coefficients_normalized and fc_heuristic[index_0] != 0:
+        if (fc_heuristic[index_0] not in filter_coefficients_normalized) and fc_heuristic[index_0] != 0:
             filter_coefficients_normalized.append(fc_heuristic[index_0])
-        if fc_heuristic[index_1] not in filter_coefficients_normalized and fc_heuristic[index_1] != 0:
+        if (fc_heuristic[index_1] not in filter_coefficients_normalized) and fc_heuristic[index_1] != 0:
             filter_coefficients_normalized.append(fc_heuristic[index_1])
-        if fc_heuristic[index_2] not in filter_coefficients_normalized and fc_heuristic[index_2] != 0:
+        if (fc_heuristic[index_2] not in filter_coefficients_normalized) and fc_heuristic[index_2] != 0:
             filter_coefficients_normalized.append(fc_heuristic[index_2])
-        if fc_heuristic[index_3] not in filter_coefficients_normalized and fc_heuristic[index_3] != 0:
+        if (fc_heuristic[index_3] not in filter_coefficients_normalized) and fc_heuristic[index_3] != 0:
             filter_coefficients_normalized.append(fc_heuristic[index_3])
 
     for line in range(0, 32, n_average_fg):
@@ -576,14 +576,14 @@ def transform_coefficients(n_average_fc, n_average_fg, print_table, print_values
         filter_coefficients.append(fg_heuristic[index_2])
         filter_coefficients.append(fg_heuristic[index_3])
 
-        if fg_heuristic[index_0] not in filter_coefficients_normalized and fg_heuristic[index_0] != 0:
-            filter_coefficients_normalized.append(fc_heuristic[index_0])
-        if fg_heuristic[index_1] not in filter_coefficients_normalized and fg_heuristic[index_1] != 0:
-            filter_coefficients_normalized.append(fc_heuristic[index_1])
-        if fg_heuristic[index_2] not in filter_coefficients_normalized and fg_heuristic[index_2] != 0:
-            filter_coefficients_normalized.append(fc_heuristic[index_2])
-        if fg_heuristic[index_3] not in filter_coefficients_normalized and fg_heuristic[index_3] != 0:
-            filter_coefficients_normalized.append(fc_heuristic[index_3])
+        if (fg_heuristic[index_0] not in filter_coefficients_normalized) and fg_heuristic[index_0] != 0:
+            filter_coefficients_normalized.append(fg_heuristic[index_0])
+        if (fg_heuristic[index_1] not in filter_coefficients_normalized) and fg_heuristic[index_1] != 0:
+            filter_coefficients_normalized.append(fg_heuristic[index_1])
+        if (fg_heuristic[index_2] not in filter_coefficients_normalized) and fg_heuristic[index_2] != 0:
+            filter_coefficients_normalized.append(fg_heuristic[index_2])
+        if (fg_heuristic[index_3] not in filter_coefficients_normalized) and fg_heuristic[index_3] != 0:
+            filter_coefficients_normalized.append(fg_heuristic[index_3])
 
 
     filter_column_list = []
@@ -670,7 +670,36 @@ def transform_coefficients(n_average_fc, n_average_fg, print_table, print_values
             print("{", str(fg_heuristic[index_0]) + ", " + str(fg_heuristic[index_1]) + ", " + str(
                 fg_heuristic[index_2]) + ", " + str(fg_heuristic[index_3]), "},")
 
-    return filter_column_list, filter_column_list_normalized, filter_coefficients, filter_coefficients_normalized
+    return filter_column_list, filter_column_list_normalized, filter_coefficients, filter_coefficients_normalized, set(fg_heuristic.values()).union(set(fc_heuristic.values()))
+
+
+def append_list_without_repeat(l1, l2, repeat):
+    l3 = l1[:]
+    if repeat:
+        [l3.append(i) for i in l2]
+    else:
+        [l3.append(i) for i in l2 if i not in l1]
+
+    return l3
+
+def generate_coefficients_for_parallel_prediction(filter_column_list, n, repeat):
+    l_mcm_2 = append_list_without_repeat(filter_column_list[0], filter_column_list[1], repeat)
+    l_mcm_3 = append_list_without_repeat(l_mcm_2, filter_column_list[2], repeat)
+    l_mcm_4 = append_list_without_repeat(l_mcm_3, filter_column_list[3], repeat)
+    l_mcm_minus_2 = append_list_without_repeat(filter_column_list[2], filter_column_list[3], repeat)
+    l_mcm_minus_3 = append_list_without_repeat(filter_column_list[1], l_mcm_minus_2, repeat)
+
+    coefficients_list = [filter_column_list[0], l_mcm_2, l_mcm_3]
+
+    for i in range(n - 3):
+        coefficients_list.append(l_mcm_4)
+
+    coefficients_list.append(l_mcm_minus_3)
+    coefficients_list.append(l_mcm_minus_2)
+    coefficients_list.append(filter_column_list[3])
+
+    return coefficients_list
+
 
 def generate_mcm_blocks(filter_column_list_normalized):
     mcm_id = 0
@@ -688,8 +717,8 @@ def generate_mcm_blocks(filter_column_list_normalized):
 
     print(components)
 
-def generate_port_mapping(filter_column_list_normalized):
-    input_map = [{},{},{},{}]
+def generate_port_mapping(filter_column_list_normalized, n):
+    input_map = [ {} for _ in range(n + 3)]
     input_index = 0
     port_mapping = "BEGIN"
     m_index = 0
@@ -698,7 +727,7 @@ def generate_port_mapping(filter_column_list_normalized):
         port_mapping += "\n\tPORT MAP ( X => ref(" + str(m_index) + ")"
         y_id = 1
         for coefficient in filter_column:
-            port_mapping += ", Y" + str(y_id) + " => input(" + str(input_index) + ")"
+            port_mapping += ", Y" + str(y_id) + " => mcm_output(" + str(input_index) + ")"
             input_column[coefficient] = input_index
             input_index += 1
             y_id += 1
@@ -727,3 +756,60 @@ def generate_mux(filter_column_list, input_map):
     mux_fg_fc += "\twhen others => -- default case for not using latch\n\t\teq_input(0) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(1) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(2) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(3) <= " + '"' + "0000000000000000" + '"' + ";\n"
 
     print(mux_fg_fc)
+
+def generate_mux_n_samples(filter_column_list, input_map, n):
+    mux_fg_fc = "case control is\n"
+    size = len(filter_column_list[0])
+    control_size = int(mh.log2(size))
+    for k in range(size):
+        mux_fg_fc += "\n\twhen " + '"' + str(bin(k)[2:].zfill(control_size)) + '"' + "=>"
+        for i in range(n - 3):
+            mux_fg_fc += "\n\t\t-- Eq " + str(i) + "\n"
+            for j in range(4):
+                mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(j) + ") <= mcm_output(" + str(input_map[i + j][filter_column_list[i + j][k + size*j]]) + "); -- input " + str(i) + ",0 <= " + str(filter_column_list[i + j][k + size*j]) + " * ref[" + str(i + j) + "]\n"
+
+        i = n - 3
+        mux_fg_fc += "\n\t\t-- Eq " + str(i) + "\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(0) + ") <= mcm_output(" + str(input_map[i][filter_column_list[i][k]]) + "); -- input " + str(i) + ",0 <= " + str(filter_column_list[i][k]) + " * ref[" + str(i) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(1) + ") <= mcm_output(" + str(input_map[i + 1][filter_column_list[i + 1][k + size]]) + "); -- input " + str(i) + ",1 <= " + str(filter_column_list[i + 1][k + size]) + " * ref[" + str(i + 1) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(2) + ") <= mcm_output(" + str(input_map[i + 2][filter_column_list[i + 2][k + size*2]]) + "); -- input " + str(i) + ",2 <= " + str(filter_column_list[i + 2][k + size*2]) + " * ref[" + str(i + 2) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(3) + ") <= mcm_output(" + str(input_map[i + 3][filter_column_list[i + 3][k + size*2]]) + "); -- input " + str(i) + ",3 <= " + str(filter_column_list[i + 3][k + size*2]) + " * ref[" + str(i + 3) + "]\n"
+
+        i += 1
+        mux_fg_fc += "\n\t\t-- Eq " + str(i) + "\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(0) + ") <= mcm_output(" + str(input_map[i][filter_column_list[i][k]]) + "); -- input " + str(i) + ",0 <= " + str(filter_column_list[i][k]) + " * ref[" + str(i) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(1) + ") <= mcm_output(" + str(input_map[i + 1][filter_column_list[i + 1][k + size]]) + "); -- input " + str(i) + ",1 <= " + str(filter_column_list[i + 1][k + size]) + " * ref[" + str(i + 1) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(2) + ") <= mcm_output(" + str(input_map[i + 2][filter_column_list[i + 2][k + size]]) + "); -- input " + str(i) + ",2 <= " + str(filter_column_list[i + 2][k + size]) + " * ref[" + str(i + 2) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(3) + ") <= mcm_output(" + str(input_map[i + 3][filter_column_list[i + 3][k + size]]) + "); -- input " + str(i) + ",3 <= " + str(filter_column_list[i + 3][k + size]) + " * ref[" + str(i + 3) + "]\n"
+
+        i += 1
+        mux_fg_fc += "\n\t\t-- Eq " + str(i) + "\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(0) + ") <= mcm_output(" + str(input_map[i][filter_column_list[i][k]]) + "); -- input " + str(i) + ",0 <= " + str(filter_column_list[i][k]) + " * ref[" + str(i) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(1) + ") <= mcm_output(" + str(input_map[i + 1][filter_column_list[i + 1][k]]) + "); -- input " + str(i) + ",1 <= " + str(filter_column_list[i + 1][k]) + " * ref[" + str(i + 1) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(2) + ") <= mcm_output(" + str(input_map[i + 2][filter_column_list[i + 2][k]]) + "); -- input " + str(i) + ",2 <= " + str(filter_column_list[i + 2][k]) + " * ref[" + str(i + 2) + "]\n"
+        mux_fg_fc += "\t\teq_input(" + str(i) + ")(" + str(3) + ") <= mcm_output(" + str(input_map[i + 3][filter_column_list[i + 3][k]]) + "); -- input " + str(i) + ",3 <= " + str(filter_column_list[i + 3][k]) + " * ref[" + str(i + 3) + "]\n"
+
+    mux_fg_fc += "\twhen others => -- default case for not using latch\n\t\teq_input(0) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(1) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(2) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(3) <= " + '"' + "0000000000000000" + '"' + ";\n"
+
+    print(mux_fg_fc)
+
+def generate_rom(filter_column_lists, filter_coefficients_normalized):
+    data_map = {}
+    size = 256
+    control_size = int(mh.log2(size))
+    index = 0
+    rom = "\t" + str(index) + ' => "' + str(bin(index)[2:].zfill(control_size)) + '",\n'
+    for coefficient in filter_coefficients_normalized:
+        data_map[coefficient] = index
+        index += 1
+        rom += "\t" + str(index) + ' => "' + str(bin(coefficient)[2:].zfill(control_size)) + '",\n'
+
+
+    i = 0
+    size = 64
+    control_size = int(mh.log2(size))
+    for coefficient_1, coefficient_2, coefficient_3, coefficient_4 in zip(filter_column_lists[0],filter_column_lists[1],filter_column_lists[2],filter_column_lists[3]):
+        rom += "\twhen " + '"' + str(bin(i)[2:].zfill(control_size)) + '"' + " => data_1 <= coefficients(" + str(data_map[coefficient_1]) + "); data_2 <= coefficients(" + str(data_map[coefficient_2]) + "); data_3 <= coefficients(" + str(data_map[coefficient_3]) + "); data_4 <= coefficients(" + str(data_map[coefficient_4]) + ");\n"
+        i += 1
+
+    print(rom)
