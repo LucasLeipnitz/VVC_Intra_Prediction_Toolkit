@@ -704,16 +704,19 @@ def generate_coefficients_for_parallel_prediction(filter_column_list, n, repeat)
 def generate_mcm_blocks(filter_column_list_normalized):
     mcm_id = 0
     components = ""
+    previous_column = []
     for column in filter_column_list_normalized:
-        components += "COMPONENT MCM_" + str(mcm_id) + "\n\tPORT (\n\t\tX : in std_logic_vector ( 7 downto 0 );"
-        y_id = 1
-        for coefficient in column[:-1]:
-            components += "\n\t\tY" + str(y_id) + ", -- Y" + str(y_id) + " = ref[" + str(mcm_id) + "]*" + str(coefficient)
-            y_id += 1
+        if not previous_column == column:
+            previous_column = column.copy()
+            components += "COMPONENT MCM_" + str(mcm_id) + "\n\tPORT (\n\t\tX : in std_logic_vector ( 7 downto 0 );"
+            y_id = 1
+            for coefficient in column[:-1]:
+                components += "\n\t\tY" + str(y_id) + ", -- Y" + str(y_id) + " = ref[" + str(mcm_id) + "]*" + str(coefficient)
+                y_id += 1
 
-        components += "\n\t\tY" + str(y_id) + " : out std_logic_vector ( 15 downto 0 ) -- Y" + str(y_id) + " = ref[" + str(mcm_id) + "]*" + str(column[-1]) + "\n\t);\nEND COMPONENT;\n\n" #last one
+            components += "\n\t\tY" + str(y_id) + " : out std_logic_vector ( 15 downto 0 ) -- Y" + str(y_id) + " = ref[" + str(mcm_id) + "]*" + str(column[-1]) + "\n\t);\nEND COMPONENT;\n\n" #last one
 
-        mcm_id += 1
+            mcm_id += 1
 
     print(components)
 
@@ -722,9 +725,10 @@ def generate_port_mapping(filter_column_list_normalized, n):
     input_index = 0
     port_mapping = "BEGIN"
     m_index = 0
+    m_counter = 0
     for filter_column, input_column  in zip(filter_column_list_normalized, input_map):
-        port_mapping += "\n\tm" + str(m_index) + " : MCM_" + str(m_index)
-        port_mapping += "\n\tPORT MAP ( X => ref(" + str(m_index) + ")"
+        port_mapping += "\n\tm" + str(m_counter) + " : MCM_" + str(m_index)
+        port_mapping += "\n\tPORT MAP ( X => ref(" + str(m_counter) + ")"
         y_id = 1
         for coefficient in filter_column:
             port_mapping += ", Y" + str(y_id) + " => mcm_output(" + str(input_index) + ")"
@@ -732,7 +736,14 @@ def generate_port_mapping(filter_column_list_normalized, n):
             input_index += 1
             y_id += 1
         port_mapping += " );"
-        m_index += 1
+        m_counter += 1
+        if not 3 < m_counter < n:
+            m_index += 1
+
+    port_mapping += "\n"
+    for i in range(n):
+        port_mapping += "\teq" + str(i) + ": equation_block\n"
+        port_mapping += "\tPORT MAP ( input_0 => eq_input(" + str(i) + ")(0), input_1 => eq_input(" + str(i) + ")(1), input_2 => eq_input("  + str(i) + ")(2), input_3 => eq_input(" + str(i) + ")(3), output => pred("  + str(i) + ") );\n"
 
     port_mapping += "\n"
     print(port_mapping)
@@ -758,6 +769,40 @@ def generate_mux(filter_column_list, input_map):
     print(mux_fg_fc)
 
 def generate_mux_n_samples(filter_column_list, input_map, n):
+    mux_fg_fc = ""
+    size = len(filter_column_list[0])
+    for k in range(size):
+        for i in range(n - 3):
+            mux_fg_fc += "\n\t-- Eq " + str(i) + " Line " + str(k) + "\n"
+            for j in range(4):
+                mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(j) + ") <= mcm_output(" + str(input_map[i + j][filter_column_list[i + j][k + size*j]]) + "); -- input " + str(i) + "," + str(j) + " <= " + str(filter_column_list[i + j][k + size*j]) + " * ref[" + str(i + j) + "]\n"
+
+        if n > 1:
+            i = n - 3
+            mux_fg_fc += "\n\t-- Eq " + str(i) + " Line " + str(k) + "\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(0) + ") <= mcm_output(" + str(input_map[i][filter_column_list[i][k]]) + "); -- input " + str(i) + ",0 <= " + str(filter_column_list[i][k]) + " * ref[" + str(i) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(1) + ") <= mcm_output(" + str(input_map[i + 1][filter_column_list[i + 1][k + size]]) + "); -- input " + str(i) + ",1 <= " + str(filter_column_list[i + 1][k + size]) + " * ref[" + str(i + 1) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(2) + ") <= mcm_output(" + str(input_map[i + 2][filter_column_list[i + 2][k + size*2]]) + "); -- input " + str(i) + ",2 <= " + str(filter_column_list[i + 2][k + size*2]) + " * ref[" + str(i + 2) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(3) + ") <= mcm_output(" + str(input_map[i + 3][filter_column_list[i + 3][k + size*2]]) + "); -- input " + str(i) + ",3 <= " + str(filter_column_list[i + 3][k + size*2]) + " * ref[" + str(i + 3) + "]\n"
+
+            i += 1
+            mux_fg_fc += "\n\t-- Eq " + str(i) + " Line " + str(k) + "\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(0) + ") <= mcm_output(" + str(input_map[i][filter_column_list[i][k]]) + "); -- input " + str(i) + ",0 <= " + str(filter_column_list[i][k]) + " * ref[" + str(i) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(1) + ") <= mcm_output(" + str(input_map[i + 1][filter_column_list[i + 1][k + size]]) + "); -- input " + str(i) + ",1 <= " + str(filter_column_list[i + 1][k + size]) + " * ref[" + str(i + 1) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(2) + ") <= mcm_output(" + str(input_map[i + 2][filter_column_list[i + 2][k + size]]) + "); -- input " + str(i) + ",2 <= " + str(filter_column_list[i + 2][k + size]) + " * ref[" + str(i + 2) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(3) + ") <= mcm_output(" + str(input_map[i + 3][filter_column_list[i + 3][k + size]]) + "); -- input " + str(i) + ",3 <= " + str(filter_column_list[i + 3][k + size]) + " * ref[" + str(i + 3) + "]\n"
+
+            i += 1
+            mux_fg_fc += "\n\t-- Eq " + str(i) + " Line " + str(k) + "\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(0) + ") <= mcm_output(" + str(input_map[i][filter_column_list[i][k]]) + "); -- input " + str(i) + ",0 <= " + str(filter_column_list[i][k]) + " * ref[" + str(i) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(1) + ") <= mcm_output(" + str(input_map[i + 1][filter_column_list[i + 1][k]]) + "); -- input " + str(i) + ",1 <= " + str(filter_column_list[i + 1][k]) + " * ref[" + str(i + 1) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(2) + ") <= mcm_output(" + str(input_map[i + 2][filter_column_list[i + 2][k]]) + "); -- input " + str(i) + ",2 <= " + str(filter_column_list[i + 2][k]) + " * ref[" + str(i + 2) + "]\n"
+            mux_fg_fc += "\tinput(" + str(k) + ")(" + str(i) + ")(" + str(3) + ") <= mcm_output(" + str(input_map[i + 3][filter_column_list[i + 3][k]]) + "); -- input " + str(i) + ",3 <= " + str(filter_column_list[i + 3][k]) + " * ref[" + str(i + 3) + "]\n"
+
+    print(mux_fg_fc)
+
+
+def generate_mux_n_samples_sc(filter_column_list, input_map, n):
     mux_fg_fc = "case control is\n"
     size = len(filter_column_list[0])
     control_size = int(mh.log2(size))
@@ -792,6 +837,7 @@ def generate_mux_n_samples(filter_column_list, input_map, n):
     mux_fg_fc += "\twhen others => -- default case for not using latch\n\t\teq_input(0) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(1) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(2) <= " + '"' + "0000000000000000" + '"' + ";\n\t\teq_input(3) <= " + '"' + "0000000000000000" + '"' + ";\n"
 
     print(mux_fg_fc)
+
 
 def generate_rom(filter_column_lists, filter_coefficients_normalized):
     data_map = {}

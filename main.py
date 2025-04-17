@@ -12,7 +12,7 @@ normalize = 1
 heuristic_on = True
 n_average_fc = 8
 n_average_fg = 8
-n_samples = 4
+n_samples = 64
 
 def main(modes, control = -1):
     
