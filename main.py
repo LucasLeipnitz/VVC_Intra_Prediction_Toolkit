@@ -3,22 +3,23 @@ import verifier as ver
 
 path_input_modes = "./input/modes/"
 
-option = 4
+option = 1
 ##modes = gen.all_modes
-input_modes = [35]
-block_size = 16
+input_modes = [34,35,36,37]
+block_size = 32
 assert_equals = 1
-normalize = 1
+normalize = False
 heuristic_on = True
+reuse_on = True
 n_average_fc = 8
 n_average_fg = 8
-n_samples = 64
+n_samples = 1
 
 def main(modes, control = -1):
     
     angles = gen.map_modes_to_angles(modes)
 
-    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized, filter_coefficients_set = gen.transform_coefficients(n_average_fc, n_average_fg,True, False)
+    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized, filter_coefficients_set = gen.transform_coefficients(n_average_fc, n_average_fg, False, False)
 
     if n_samples >= 4:
         filter_column_list = gen.generate_coefficients_for_parallel_prediction(filter_column_list, n_samples, True)
@@ -26,11 +27,15 @@ def main(modes, control = -1):
 
     match control:
         case 0:
-            for mode, angle in zip(modes, angles):
-                equations, equations_set = gen.calculate_equations(mode, angle, block_size, "fc_heuristic", 1)
-                gen.generate_sorted_equations_set(equations_set, True)
+            gen.calculate_samples(modes, angles, block_size, normalize = normalize, create_table = True)
         case 1:
-            gen.calculate_samples(modes, angles, block_size, normalize=normalize)
+            gen.calculate_samples(modes, angles, block_size, normalize = normalize, create_table = False)
+            equations_constants_set = set()
+            equations_constants_samples_set = set()
+            for mode, angle in zip(modes, angles):
+                equations, equations_constants_set, equations_constants_samples_set = gen.calculate_equations(mode, angle, block_size, "fc_heuristic", equations_constants_set, equations_constants_samples_set, reuse_on)
+             
+            gen.generate_sorted_equations_set(equations_constants_set, False)
         case 2:
             gen.calculate_iidx_ifact(modes, angles, block_size)
         case 3:

@@ -300,10 +300,11 @@ def calculate_iidx_ifact(modes, angles, size):
     df.to_excel(excel_writer=path_values + "values_ifact_" + str(size) + ".xlsx")
 
 
-def calculate_samples(modes, angles, size, normalize=0):
+def calculate_samples(modes, angles, size, normalize=0, create_table = False):
     values_ref = []
     values_id = []
     columns = []
+    list_of_samples_map = []
     lowest_id_value = mh.inf
     highest_id_value = -mh.inf
     for i, j in zip(modes, angles):
@@ -311,6 +312,7 @@ def calculate_samples(modes, angles, size, normalize=0):
         tb.calculate_pred_values()
         columns.append(i)
         values_ref.append(tb)
+        list_of_samples_map.append(tb.ref)
         values_id.append(tb.ref_id)
         if (lowest_id_value > tb.ref_id[0]):
             lowest_id_value = tb.ref_id[0]
@@ -324,21 +326,25 @@ def calculate_samples(modes, angles, size, normalize=0):
 
         values_ref_array.append(i.transform_dict_to_array(lowest_id_value, highest_id_value, normalize))
 
-    rows = list(range(lowest_id_value, highest_id_value + 1))
+    if(create_table):
 
-    df = pd.DataFrame(list(zip(*values_ref_array)), index=rows, columns=columns)
-    if (normalize):
-        df.to_excel(excel_writer=path_samples + "ref_" + str(size) + "_normalized" + ".xlsx")
-    else:
-        df.to_excel(excel_writer=path_samples + "ref_" + str(size) + ".xlsx")
+        rows = list(range(lowest_id_value, highest_id_value + 1))
+
+        df = pd.DataFrame(list(zip(*values_ref_array)), index=rows, columns=columns)
+        if (normalize):
+            df.to_excel(excel_writer=path_samples + "ref_" + str(size) + "_normalized" + ".xlsx")
+        else:
+            df.to_excel(excel_writer=path_samples + "ref_" + str(size) + ".xlsx")
+
+    return list_of_samples_map
 
 
-def calculate_equations(mode, angle, size, coefficients, reuse = False):
+def calculate_equations(mode, angle, size, coefficients, equations_constants_set, equations_constants_samples_set, reuse = False):
     tb = TransformBlock(size, size, mode, angle, 0, size * 2 + 2, size * 2 + 2, 0)
+    tb.calculate_pred_values()
     equations = tb.calculate_equations_mode()
     equations_constants = []
     equations_constants_reuse = []
-    equations_constants_set = set()
     reused_equations = 0
     columns = []
     line_index = 0
@@ -349,6 +355,7 @@ def calculate_equations(mode, angle, size, coefficients, reuse = False):
         line_constants_reuse = []
         for equation in line:
             equation_constants = ""
+            equation_constants_samples = ""
             for k in range(4):
                 p, index, ref = re.findall(r'-?\d+', equation.split('+')[
                     k])  # get p[index] and ref from string containing and put it in two separately variables
@@ -358,15 +365,18 @@ def calculate_equations(mode, angle, size, coefficients, reuse = False):
 
                 value = ft_coefficients[coefficients][p + '[' + index + ']']
                 equation_constants += '(' + str(value) + ')*' + "ref[" + str(ref) + '] + '
+                equation_constants_samples += '(' + str(value) + ')*' + str(tb.ref[int(ref)]) + ' + '
 
             equation_constants = equation_constants[:-3]
-            if equation_constants in equations_constants_set:
+            equation_constants_samples = equation_constants_samples[:-3]
+            if equation_constants_samples in equations_constants_samples_set:
                 reused_equations += 1
-                line_constants_reuse.append("REUSED:(" + equation_constants + ")")
+                line_constants_reuse.append("REUSED:(" + equation_constants_samples + ")")
             else:
-                line_constants_reuse.append(equation_constants)
+                line_constants_reuse.append(equation_constants_samples)
 
             equations_constants_set.add(equation_constants)
+            equations_constants_samples_set.add(equation_constants_samples)
             line_constants.append(equation_constants)
 
         equations_constants.append(line_constants)
@@ -395,7 +405,7 @@ def calculate_equations(mode, angle, size, coefficients, reuse = False):
     print(len(equations_constants_set))
     print(reused_equations)'''
 
-    return equations, equations_constants_set
+    return equations, equations_constants_set, equations_constants_samples_set
 
 def get_reference_number(equation):
     x = re.search("ref\\[-*[0-9]*", equation)
