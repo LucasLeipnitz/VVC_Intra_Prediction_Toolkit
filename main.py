@@ -3,9 +3,9 @@ import verifier as ver
 
 path_input_modes = "./input/modes/"
 
-option = 1
+option = 2
 ##modes = gen.all_modes
-input_modes = [34,35,36,37]
+input_modes = gen.all_modes
 block_size = 32
 assert_equals = 1
 normalize = False
@@ -37,7 +37,7 @@ def main(modes, control = -1):
              
             gen.generate_sorted_equations_set(equations_constants_set, False)
         case 2:
-            gen.calculate_iidx_ifact(modes, angles, block_size)
+            gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
         case 3:
             for mode, angle in zip(modes, angles):
                 equations, equations_set = gen.calculate_equations(mode, angle, block_size, "fc_heuristic", 1)

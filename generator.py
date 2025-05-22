@@ -283,7 +283,7 @@ def get_coefficient_value(table, coefficient):
         return ft_coefficients[table][coefficient]
 
 
-def calculate_iidx_ifact(modes, angles, size):
+def calculate_iidx_ifact(modes, angles, size, heuristic_on, n_average_fc):
     values_ifact = []
     values_iidx = []
     columns = []
@@ -292,7 +292,10 @@ def calculate_iidx_ifact(modes, angles, size):
         tb.calculate_constants_mode()
         columns.append(i)
         values_iidx.append(tb.array_iidx.copy())
-        values_ifact.append(tb.array_ifact.copy())
+        if heuristic_on:
+            values_ifact.append((np.array(tb.array_ifact.copy())//n_average_fc).tolist())
+        else:
+            values_ifact.append(tb.array_ifact.copy())
 
     df = pd.DataFrame(list(zip(*values_iidx)), columns=columns)
     df.to_excel(excel_writer=path_values + "values_iidx_" + str(size) + ".xlsx")
