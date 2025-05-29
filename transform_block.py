@@ -146,7 +146,7 @@ class TransformBlock:
             self.array_iidx.append(iidx)
             self.array_ifact.append(ifact)
 
-    def calculate_equations_mode(self):
+    def calculate_equations_mode(self, create_table = False):
         columns = []
         for x in range(self.nTbW): 
             columns.append(x)
@@ -159,17 +159,19 @@ class TransformBlock:
                                         str(y + iidx + 2) + "] + " + "fC[" + str(ifact) + "][3]*ref[" + str(y + iidx + 3) + "]")        
             self.equations.append(current_column)
 
-        df = pd.DataFrame(list(zip(*self.equations)),columns = columns)
-        excel_writer = pd.ExcelWriter(path + path_equations + "equations_" + str(self.predModeIntra) + "_" + str(self.nTbW) + "x" + str(self.nTbH) + ".xlsx", engine='xlsxwriter') 
-        df.to_excel(excel_writer, sheet_name='equations', index=False, na_rep='NaN')
+        if create_table:
+            df = pd.DataFrame(list(zip(*self.equations)),columns = columns)
+            excel_writer = pd.ExcelWriter(path + path_equations + "equations_" + str(self.predModeIntra) + "_" + str(self.nTbW) + "x" + str(self.nTbH) + ".xlsx", engine='xlsxwriter')
+            df.to_excel(excel_writer, sheet_name='equations', index=False, na_rep='NaN')
 
-        # Auto-adjust columns' width
-        for column in df:
-            column_width = 70
-            col_iidx = df.columns.get_loc(column)
-            excel_writer.sheets['equations'].set_column(col_iidx, col_iidx, column_width)
+            # Auto-adjust columns' width
+            for column in df:
+                column_width = 70
+                col_iidx = df.columns.get_loc(column)
+                excel_writer.sheets['equations'].set_column(col_iidx, col_iidx, column_width)
 
-        excel_writer._save()
+            excel_writer._save()
+
         return self.equations
 
     '''def calculate_equation_with_reuse(self, buffer, x):

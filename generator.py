@@ -342,10 +342,10 @@ def calculate_samples(modes, angles, size, normalize=0, create_table = False):
     return list_of_samples_map
 
 
-def calculate_equations(mode, angle, size, coefficients, equations_constants_set, equations_constants_samples_set, reuse = False):
+def calculate_equations(mode, angle, size, coefficients, equations_constants_set, equations_constants_samples_set, reuse = False, create_table = False):
     tb = TransformBlock(size, size, mode, angle, 0, size * 2 + 2, size * 2 + 2, 0)
     tb.calculate_pred_values()
-    equations = tb.calculate_equations_mode()
+    equations = tb.calculate_equations_mode(create_table)
     equations_constants = []
     equations_constants_reuse = []
     reused_equations = 0
@@ -389,19 +389,20 @@ def calculate_equations(mode, angle, size, coefficients, equations_constants_set
     if reuse:
         equations_list = equations_constants_reuse
 
-    df = pd.DataFrame(list(zip(*equations_list)), columns=columns)
-    excel_writer = pd.ExcelWriter(
-        path_equations + "equations_constants_" + coefficients + "_" + str(mode) + "_" + str(size) + "x" + str(
-            size) + ".xlsx", engine='xlsxwriter')
-    df.to_excel(excel_writer, sheet_name='equations', index=False, na_rep='NaN')
+    if create_table:
+        df = pd.DataFrame(list(zip(*equations_list)), columns=columns)
+        excel_writer = pd.ExcelWriter(
+            path_equations + "equations_constants_" + coefficients + "_" + str(mode) + "_" + str(size) + "x" + str(
+                size) + ".xlsx", engine='xlsxwriter')
+        df.to_excel(excel_writer, sheet_name='equations', index=False, na_rep='NaN')
 
-    # Auto-adjust columns' width
-    for column in df:
-        column_width = 70
-        col_iidx = df.columns.get_loc(column)
-        excel_writer.sheets['equations'].set_column(col_iidx, col_iidx, column_width)
+        # Auto-adjust columns' width
+        for column in df:
+            column_width = 70
+            col_iidx = df.columns.get_loc(column)
+            excel_writer.sheets['equations'].set_column(col_iidx, col_iidx, column_width)
 
-    excel_writer._save()
+        excel_writer._save()
 
     '''for equation in equations_constants_set:
         print(equation)
