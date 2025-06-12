@@ -156,10 +156,10 @@ class TransformBlock:
             for y in range(self.nTbH):
                 current_column.append("fC[" + str(ifact) + "][0]*ref[" + str(y + iidx + 0) + "] + " + "fC[" + str(ifact) +
                                         "][1]*ref[" + str(y + iidx + 1) + "] + " + "fC[" + str(ifact) + "][2]*ref[" +
-                                        str(y + iidx + 2) + "] + " + "fC[" + str(ifact) + "][3]*ref[" + str(y + iidx + 3) + "]")        
+                                        str(y + iidx + 2) + "] + " + "fC[" + str(ifact) + "][3]*ref[" + str(y + iidx + 3) + "]")
             self.equations.append(current_column)
 
-        if create_table:
+        '''if create_table:
             df = pd.DataFrame(list(zip(*self.equations)),columns = columns)
             excel_writer = pd.ExcelWriter(path + path_equations + "equations_" + str(self.predModeIntra) + "_" + str(self.nTbW) + "x" + str(self.nTbH) + ".xlsx", engine='xlsxwriter')
             df.to_excel(excel_writer, sheet_name='equations', index=False, na_rep='NaN')
@@ -170,9 +170,7 @@ class TransformBlock:
                 col_iidx = df.columns.get_loc(column)
                 excel_writer.sheets['equations'].set_column(col_iidx, col_iidx, column_width)
 
-            excel_writer._save()
-
-        return self.equations
+            excel_writer._save()'''
 
     '''def calculate_equation_with_reuse(self, buffer, x):
         columns.append(x)
@@ -195,7 +193,20 @@ class TransformBlock:
                 buffer[ifact][y + iidx] = str(self.predModeIntra) + " : " + str(x) + "," + str(y)
 
             self.equations_reuse.append(current_column)'''
-    
+
+    def get_equations(self, index_x = 0, index_y = 0, subset_size = 0):
+        if subset_size <= 0:
+            subset_size = self.nTbH
+
+        list_of_equations = []
+        for x in range(index_x, index_x + subset_size):
+            equations = []
+            for y in range(index_y, index_y + subset_size):
+                equations.append(self.equations[x][y])
+
+            list_of_equations.append(equations)
+
+        return list_of_equations
     
     def print_reference_sample_array(self):
         ref = []

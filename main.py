@@ -1,16 +1,22 @@
 import generator as gen
+import simulator as sim
 import verifier as ver
 
 path_input_modes = "./input/modes/"
 
 option = 2
 ##modes = gen.all_modes
-input_modes = gen.all_modes
-parallel_modes_number = 5
-block_size = 4
+#input_modes = gen.all_modes
+input_modes = [28,29,30,31,32,33,34,35,36,37,38,39,40]
+parallel_modes_number = 3
+buffer_type = 0
+global_buffer_type = 2
+block_size = 64
+subset_size = 64
 assert_equals = 1
 normalize = False
 heuristic_on = True
+samples_on = True
 reuse_on = True
 n_average_fc = 16
 n_average_fg = 16
@@ -20,7 +26,7 @@ def main(modes, control = -1):
     
     angles = gen.map_modes_to_angles(modes)
 
-    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized, filter_coefficients_set = gen.transform_coefficients(n_average_fc, n_average_fg, False, False)
+    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized, filter_coefficients_set = gen.transform_coefficients(n_average_fc, n_average_fg, False, False )
 
     if n_samples >= 4:
         filter_column_list = gen.generate_coefficients_for_parallel_prediction(filter_column_list, n_samples, True)
@@ -33,42 +39,12 @@ def main(modes, control = -1):
             gen.calculate_samples(modes, angles, block_size, normalize = normalize, create_table = False)
             equations_constants_set = set()
             equations_constants_samples_set = set()
+            equations_constants_reuse_map = {}
             for mode, angle in zip(modes, angles):
-                equations, equations_constants_set, equations_constants_samples_set = gen.calculate_equations(mode, angle, block_size, "fc_heuristic", equations_constants_set, equations_constants_samples_set, reuse_on, create_table = True)
+                equations, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(mode, angle, block_size, "fc_heuristic", equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size = 0, samples = samples_on, reuse = reuse_on, create_table = True)
 
         case 2:
-            index = 0
-            max_size = 0
-            max_size_modes = []
-            while index < len(modes):
-
-                modes_subset = modes[index:index + parallel_modes_number]
-                angles_subset = angles[index:index + parallel_modes_number]
-
-                gen.calculate_samples(modes_subset, angles_subset, block_size, normalize=normalize, create_table=False)
-                equations_constants_set = set()
-                equations_constants_samples_set = set()
-                for mode, angle in zip(modes_subset, angles_subset):
-                    equations, equations_constants_set, equations_constants_samples_set = gen.calculate_equations(mode,
-                                                                                                                  angle,
-                                                                                                                  block_size,
-                                                                                                                  "fc_heuristic",
-                                                                                                                  equations_constants_set,
-                                                                                                                  equations_constants_samples_set,
-                                                                                                                  reuse_on,
-                                                                                                                  create_table = False)
-                #gen.generate_sorted_equations_set(equations_constants_set, True)
-                print(modes_subset)
-                for equation in equations_constants_samples_set:
-                    print(equation)
-                size = len(equations_constants_samples_set)
-                print(size)
-                if max_size < size:
-                    max_size = size
-                    max_size_modes = modes_subset.copy()
-                index += parallel_modes_number
-            print(max_size)
-            print(max_size_modes)
+            sim.simulate_ADIP(modes, angles, parallel_modes_number, block_size, subset_size, samples_on, reuse_on, buffer_type, global_buffer_type)
         case 3:
             gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
         case 4:
@@ -96,7 +72,7 @@ def main(modes, control = -1):
                 ver.automated_tests(196, -66, 38)
 
         case _:
-            print("Select a value for control between 0 and 3")
+            print("Select a value for control between 0 and 7")
     
 
 if __name__ == "__main__":

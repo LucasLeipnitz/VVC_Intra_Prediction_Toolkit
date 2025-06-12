@@ -4,11 +4,11 @@ path_tests = "./output/tests/"
 def map_pixel_to_reference(input_pixels, mode_tb, lower_limit, upper_limit):
     ref = {}
     for key, value in zip(mode_tb.ref.keys(),mode_tb.ref.values()):
-        if(mode_tb.predModeIntra < 34):
-            if(key <= (lower_limit + 1)):
+        if mode_tb.predModeIntra < 34:
+            if key <= (lower_limit + 1):
                 break
         else:
-            if(key >= (upper_limit + 1)):
+            if key >= (upper_limit + 1):
                 break
 
         x,y = re.findall(r'-?\d+', value) #Get x and y value from string
