@@ -393,8 +393,8 @@ def map_index_to_constant(tb, coefficients, equations, equations_constants_set, 
     return columns, equations_constants, equations_constants_samples, equations_constants_reuse, reused_equations, equations_constants_reuse_map
 
 
-def calculate_equations(mode, angle, size, coefficients, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size = 0, samples = False, reuse = False, create_table = False):
-    tb = TransformBlock(size, size, mode, angle, 0, size * 2 + 2, size * 2 + 2, 0)
+def calculate_equations(mode, angle, nTbW, nTbH, coefficients, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size = 0, refidx = 0, cidx = 0,samples = False, reuse = False, create_table = False):
+    tb = TransformBlock(nTbW, nTbH, mode, angle, refidx, nTbW * 2 + 2, nTbH * 2 + 2, cidx)
     tb.calculate_pred_values()
     tb.calculate_equations_mode(create_table)
     equations = tb.get_equations(index_x, index_y, subset_size)
@@ -431,6 +431,7 @@ def calculate_equations(mode, angle, size, coefficients, equations_constants_set
     print(reused_equations)'''
 
     return equations, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map
+
 
 def get_reference_number(equation):
     x = re.search("ref\\[-*[0-9]*", equation)
