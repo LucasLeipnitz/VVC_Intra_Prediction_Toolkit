@@ -197,3 +197,91 @@ def automated_tests(seed, lower_limit, upper_limit):
 
 def verify_arquitecture_limitation(equations_set, n_buffers, n_adders):
     pass
+
+def verify_programmable_blocks_n8(block, control_variables_set_list, filter_coefficient):
+
+    match block:
+        case 0:
+            for coefficient in filter_coefficient[0]:
+                match_coefficient = False
+                match_times = 0
+                for A in control_variables_set_list[0]:
+                    for B in control_variables_set_list[1]:
+                        for C in control_variables_set_list[2]:
+                            for D in control_variables_set_list[3]:
+                                if coefficient == (A + B*C)*D:
+                                    match_coefficient = True
+                                    match_times += 1
+
+                if match_coefficient:
+                    print("Coefficient match:", coefficient)
+                else:
+                    print("Coefficient doesn't match:", coefficient)
+        case 1:
+            for coefficient in filter_coefficient[1]:
+                match_coefficient = False
+                match_times = 0
+                for A in control_variables_set_list[0]:
+                    for B in control_variables_set_list[1]:
+                        for C in control_variables_set_list[2]:
+                            for D in control_variables_set_list[3]:
+                                for E in control_variables_set_list[4]:
+                                    for F in control_variables_set_list[5]:
+                                        if coefficient == (A + (B + C*D)*E)*F:
+                                            match_coefficient = True
+                                            match_times += 1
+
+                if match_coefficient:
+                    print("Coefficient match:", coefficient)
+                else:
+                    print("Coefficient doesn't match:", coefficient)
+
+        case 2:
+            for coefficient in filter_coefficient[2]:
+                match_coefficient = False
+                match_times = 0
+                for A in control_variables_set_list[0]:
+                    for B in control_variables_set_list[1]:
+                        for C in control_variables_set_list[2]:
+                            for D in control_variables_set_list[3]:
+                                for E in control_variables_set_list[4]:
+                                    for F in control_variables_set_list[5]:
+                                        for G in control_variables_set_list[6]:
+                                            for H in control_variables_set_list[7]:
+                                                for K in control_variables_set_list[8]:
+                                                    x = B+C*D
+                                                    y = (E*A + (1-E)*x*16) + (K*x*8 + (1-K)*x)*F
+                                                    z = G*y + (G-1)*y*2
+                                                    out = H*z + (1-H)*x*8
+                                                    if coefficient == out:
+                                                        match_coefficient = True
+                                                        match_times += 1
+
+                if match_coefficient:
+                    print("Coefficient match:", coefficient)
+                else:
+                    print("Coefficient doesn't match:", coefficient)
+        case 3:
+            for coefficient in filter_coefficient[3]:
+                match_coefficient = False
+                match_times = 0
+                for A in control_variables_set_list[0]:
+                    for B in control_variables_set_list[1]:
+                        for C in control_variables_set_list[2]:
+                            for D in control_variables_set_list[3]:
+                                for E in control_variables_set_list[4]:
+                                    for F in control_variables_set_list[5]:
+                                        x = B + C * D
+                                        out = F*(A - x) + (1-F)*x*E
+                                        if coefficient == out:
+                                            match_coefficient = True
+                                            match_times += 1
+
+                if match_coefficient:
+                    print("Coefficient match:", coefficient)
+                else:
+                    print("Coefficient doesn't match:", coefficient)
+        case _:
+            print("Select a value for block between 0 and 3")
+
+

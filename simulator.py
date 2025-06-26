@@ -165,10 +165,27 @@ def simulate_ADIP(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, s
 
     excel_writer._save()
 
+def count_effective_and_reused_equations(cache, equations, mode):
+    effective_equation_set = set()
+    for data in cache.data_cache.keys():
+        for column in equations:
+            for equation in column:
+                if data == equation:
+                    effective_equation_set.add(equation)
+
+
+    return len(effective_equation_set)
+
 def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1):
     pred_cache = cache_c(int((nTbH/subset_size)/2))
     iterations = int(len(parallel_modes_list))
     buffer_size_list = []
+    exit_buffer_dict = {}
+    max_size = 0
+    max_size_modes = []
+    for mode in modes:
+        exit_buffer_dict[mode] = 0
+
     global_samples_buffer_list = [set() for i in range(iterations)]
     list_of_samples_predictions = [[] for i in range(iterations)]
     table_of_samples_predictions = [[[0 for i in range(0, nTbH, subset_size)] for j in range(0, nTbW, subset_size)] for k in range(iterations)]
@@ -189,8 +206,6 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
         for index_y in range(0, nTbH, subset_size):
             sequence = [str(index_x) + ", " + str(index_y)]
             index = 0
-            max_size = 0
-            max_size_modes = []
             list_of_modes = []
             for i in range(iterations):
                 parallel_modes_number = parallel_modes_list[i]
@@ -200,8 +215,9 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
                 equations_constants_set = set()
                 equations_constants_samples_set = set()
                 equations_constants_reuse_map = {}
+                equations_list = []
                 for mode, angle in zip(modes_subset, angles_subset):
-                    equations, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
+                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
                         mode,
                         angle,
                         nTbW,
@@ -217,6 +233,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
                         samples=samples_on,
                         reuse=reuse_on,
                         create_table=False)
+                    equations_list.append(equations)
 
                 rot_size = 0
                 rot_set = set()
@@ -265,6 +282,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
                 print("N samples to be predicted (with cache): ", size)
                 print("Cache size", buffer_size)
                 buffer_size_list.append(buffer_size)
+
                 list_of_samples_to_be_predicted.append(size)
                 list_of_modes.append(str(modes_subset))
                 list_of_samples_predictions[i].append(size)
@@ -275,6 +293,12 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
                     max_size = size
                     max_size_modes = modes_subset.copy()
                 index += parallel_modes_number
+
+                for equation, mode in zip(equations_list, modes):
+                    exit_buffer_size = count_effective_and_reused_equations(pred_cache, equation, mode)
+                    if exit_buffer_dict[mode] < exit_buffer_size:
+                        exit_buffer_dict[mode] = exit_buffer_size
+
 
             print("Most expensive modes:", max_size_modes, max_size)
             table_of_mode_sequences.append(sequence)
@@ -292,6 +316,13 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
     print(total_sum)'''
     print("Max size of equations to predict", max(list_of_samples_to_be_predicted))
     print("Max size of cache", max(buffer_size_list))
+
+    '''total_exit_buffer_size = 0
+    for mode in modes:
+        total_exit_buffer_size += exit_buffer_dict[mode]
+        print("Max size of exit buffer for:", mode, exit_buffer_dict[mode])
+
+    print("Total size", total_exit_buffer_size)'''
 
     list_of_max_values = []
     list_of_avg_values = []

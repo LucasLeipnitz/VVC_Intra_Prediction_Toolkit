@@ -17,16 +17,17 @@ path_samples = path + "output/samples/"
 path_planar = path + "output/planar/"
 path_equations = "output/equations/"
 
-modes1 = [34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
-          61, 62, 63, 64, 65, 66]
-modes2 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-          31, 32, 33, 34]
-modes3 = [2, 3, 7, 10, 18, 23, 26, 30, 33, 34, 35, 43, 46, 49, 50, 54]
-modes4 = [35]
-modes5 = [35, 54]
 all_modes = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
              31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
              58, 59, 60, 61, 62, 63, 64, 65, 66]
+modes1 = [2,3,4,5,6,7,8,9,10,11,12,13]
+modes2 = [34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+          61, 62, 63, 64, 65, 66]
+modes3 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+          31, 32, 33, 34]
+'''modes3 = [2, 3, 7, 10, 18, 23, 26, 30, 33, 34, 35, 43, 46, 49, 50, 54]
+modes4 = [35]
+modes5 = [35, 54]
 modes_positive = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66]
 modes_negative = [34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
 angles1 = [-32, -29, -26, -23, -20, -18, -16, -14, -12, -10, -8, -6, -4, -3, -2, -1, 0, 1, 2, 3, 4, 6, 8, 10, 12, 14,
@@ -40,7 +41,7 @@ all_angles = [32, 29, 26, 23, 20, 18, 16, 14, 12, 10, 8, 6, 4, 3, 2, 1, 0, -1, -
               -18, -20, -23, -26, -29, -32, -29, -26, -23, -20, -18, -16, -14, -12, -10, -8, -6, -4, -3, -2, -1, 0, 1,
               2, 3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 23, 26, 29, 32]
 angles_positive = [0, 1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 23, 26, 29, 32]
-angles_negative = [-32, -29, -26, -23, -20, -18, -16, -14, -12, -10, -8, -6, -4, -3, -2, -1, 0]
+angles_negative = [-32, -29, -26, -23, -20, -18, -16, -14, -12, -10, -8, -6, -4, -3, -2, -1, 0]'''
 
 angles_map = {
     2: 32,
@@ -408,13 +409,12 @@ def calculate_equations(mode, angle, nTbW, nTbH, coefficients, equations_constan
     reuse_string = ""
     if reuse:
         reuse_string += "reuse_"
-        equations_list = equations_constants_reuse
 
     if create_table:
         df = pd.DataFrame(list(zip(*equations_list)), columns=columns)
         excel_writer = pd.ExcelWriter(
-            path_equations + "equations_" + reuse_string + coefficients + "_" + str(mode) + "_" + str(size) + "x" + str(
-                size) + ".xlsx", engine='xlsxwriter')
+            path_equations + "equations_" + reuse_string + coefficients + "_" + str(mode) + "_" + str(nTbW) + "x" + str(
+                nTbH) + ".xlsx", engine='xlsxwriter')
         df.to_excel(excel_writer, sheet_name='equations', index=False, na_rep='NaN')
 
         # Auto-adjust columns' width
@@ -430,7 +430,7 @@ def calculate_equations(mode, angle, nTbW, nTbH, coefficients, equations_constan
     print(len(equations_constants_set))
     print(reused_equations)'''
 
-    return equations, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map
+    return equations_list, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map
 
 
 def get_reference_number(equation):

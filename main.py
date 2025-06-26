@@ -6,11 +6,12 @@ from transform_block import TransformBlock
 path_input_modes = "./input/modes/"
 
 option = 2
-input_modes = gen.modes1
+input_modes = gen.all_modes
 #parallel_modes_list = [5,24,2,4,5,25] #otimo 4x4
 #parallel_modes_list = [16,9,3,3,2,3,5,24] #otimo 64x64
-parallel_modes_list = [len(input_modes)]
-#parallel_modes_list = [11 for i in range(int(len(input_modes)/11))]
+#parallel_modes_list = [len(input_modes)]
+#parallel_modes_list = [1 for i in range(int(len(input_modes)))]
+parallel_modes_list = [8, 12, 4, 4, 3, 3, 3, 4, 4, 12, 8]
 buffer_type = -1
 global_buffer_type = 1
 block_size = 8
@@ -45,7 +46,7 @@ def main(modes, control = -1):
             equations_constants_samples_set = set()
             equations_constants_reuse_map = {}
             for mode, angle in zip(modes, angles):
-                equations, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(mode, angle, block_size, "fc_heuristic", equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size = 0, samples = samples_on, reuse = reuse_on, create_table = True)
+                equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(mode, angle, nTbW, nTbH, "fc_heuristic", equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size = 0, refidx = 0, cidx = 0, samples = samples_on, reuse = reuse_on, create_table = True)
 
         case 2:
             sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
@@ -75,7 +76,18 @@ def main(modes, control = -1):
                     ver.assert_equals_angular(test_input, modes[i], angles[i], block_size, -66, 38)
             else:
                 ver.automated_tests(196, -66, 38)
-
+        case 8:
+                ver.verify_programmable_blocks_n8(0, [[1,2,4,8],[1,2,4,8],[-1,1],[-1,2]],filter_column_list_normalized)
+                print("#####################################")
+                ver.verify_programmable_blocks_n8(1, [[1,2,4,8,16,32,64], [1,2,4,8,16,32,64], [1,2,4,8,16,32,64], [-1, 1], [-1, 1], [1, 2]],filter_column_list_normalized)
+                print("#####################################")
+                ver.verify_programmable_blocks_n8(2, [[1, 2, 4, 8, 16, 32], [1, 2, 4, 8, 16, 32],
+                                                      [1, 2, 4, 8, 16, 32], [-1, 1], [0,1], [-1,1], [0,1], [0,1], [0,1]],
+                                                  filter_column_list_normalized)
+                print("#####################################")
+                ver.verify_programmable_blocks_n8(3, [[1, 2, 4, 8, 16, 32], [1, 2, 4, 8, 16, 32],
+                                                      [1, 2, 4, 8, 16, 32], [-1, 1], [-1, 1], [0, 1]],
+                                                  filter_column_list_normalized)
         case _:
             print("Select a value for control between 0 and 7")
     
