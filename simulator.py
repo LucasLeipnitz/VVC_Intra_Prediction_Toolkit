@@ -372,6 +372,73 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
 
     excel_writer._save()'''
 
+
+def simulate_architecture(modes, angles, parallel_modes_list, number_of_units, nTbW, nTbH, subset_size, refidx, samples_on, reuse_on):
+    iterations = int(len(parallel_modes_list))
+    states_index = 0
+    state_mapping = {}
+    states_list = []
+    for index_x in range(0, nTbW, subset_size):
+        for index_y in range(0, nTbH, subset_size):
+            equations_constants_set = set()
+            equations_constants_samples_set = set()
+            equations_constants_reuse_map = {}
+            index = 0
+            for i in range(iterations):
+                unit_equation_mapping = {}
+                unit_index = 0
+                parallel_modes_number = parallel_modes_list[i]
+                modes_subset = modes[index:index + parallel_modes_number]
+                angles_subset = angles[index:index + parallel_modes_number]
+                exit_buffer_unit_mapping = []
+                for mode, angle in zip(modes_subset, angles_subset):
+                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
+                        mode,
+                        angle,
+                        nTbW,
+                        nTbH,
+                        "fc_heuristic",
+                        equations_constants_set,
+                        equations_constants_samples_set,
+                        equations_constants_reuse_map,
+                        index_x=index_x,
+                        index_y=index_y,
+                        subset_size=subset_size,
+                        refidx=refidx,
+                        samples=samples_on,
+                        reuse=reuse_on,
+                        create_table=False)
+
+                    for equations_column in equations:
+                        for equation in equations_column:
+                            if equation not in unit_equation_mapping.keys():
+                                unit_equation_mapping[equation] = unit_index
+                                unit_index += 1
+
+                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
+
+                str_exit_buffer = str(exit_buffer_unit_mapping)
+                match = False
+                state_mapping_list = list(state_mapping.keys())
+                states_index = 0
+                while match == False and states_index < len(state_mapping_list):
+                    if str_exit_buffer in state_mapping_list[states_index]:
+                        states_index = state_mapping[str_exit_buffer]
+                        match = True
+                    else:
+                        states_index += 1
+
+                if not match:
+                    state_mapping[str_exit_buffer] = states_index
+
+                states_list.append(states_index)
+
+                index += parallel_modes_number
+
+    print(states_list)
+    print(states_index)
+
+
 def simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type = -1, refidx = 0, cidx = 0):
     iterations = int(len(parallel_modes_list))
     samples_buffer_list = [[set() for i in range(0, nTbH, subset_size)] for j in range(0, nTbW, subset_size)]
