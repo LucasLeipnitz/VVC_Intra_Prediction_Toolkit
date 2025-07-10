@@ -176,7 +176,7 @@ def count_effective_and_reused_equations(cache, equations, mode):
 
     return len(effective_equation_set)
 
-def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1):
+def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, final_index_x, final_index_y, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1):
     pred_cache = cache_c(int((nTbH/subset_size)/2))
     iterations = int(len(parallel_modes_list))
     buffer_size_list = []
@@ -201,9 +201,9 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
     columns = []
     global_samples_buffer = set()
     list_of_samples_to_be_predicted = []
-    for index_x in range(0, nTbW, subset_size):
+    for index_x in range(initial_index_x, final_index_x, subset_size):
         columns.append(index_x)
-        for index_y in range(0, nTbH, subset_size):
+        for index_y in range(initial_index_y, final_index_y, subset_size):
             sequence = [str(index_x) + ", " + str(index_y)]
             index = 0
             list_of_modes = []
@@ -274,13 +274,13 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
                 # gen.generate_sorted_equations_set(equations_constants_set, True)
                 print("Subset:", index_x, index_y)
                 print("Modes:", modes_subset)
-                # for equation in equations_constants_samples_set:
-                # print(equation)
+                for equation in equations_constants_samples_set:
+                	print(equation)
                 #size = len(equations_constants_samples_set - global_samples_buffer)
                 size = len(equations_constants_samples_set - buffer_equations)
                 print("Total N samples to be predicted:", len(equations_constants_samples_set))
-                print("N samples to be predicted (with cache): ", size)
-                print("Cache size", buffer_size)
+                #print("N samples to be predicted (with cache): ", size)
+                #print("Cache size", buffer_size)
                 buffer_size_list.append(buffer_size)
 
                 list_of_samples_to_be_predicted.append(size)
@@ -300,7 +300,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
                         exit_buffer_dict[mode] = exit_buffer_size
 
 
-            print("Most expensive modes:", max_size_modes, max_size)
+            #print("Most expensive modes:", max_size_modes, max_size)
             table_of_mode_sequences.append(sequence)
             '''plt.rcParams['font.size'] = 4
             plt.figure(figsize=(12, 4))
@@ -315,7 +315,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
         total_sum += column_sum
     print(total_sum)'''
     print("Max size of equations to predict", max(list_of_samples_to_be_predicted))
-    print("Max size of cache", max(buffer_size_list))
+    #print("Max size of cache", max(buffer_size_list))
 
     '''total_exit_buffer_size = 0
     for mode in modes:
@@ -342,7 +342,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
     plt.savefig("graph_avg_values_" + str(block_size) + ".png", dpi=300,
                 bbox_inches='tight')'''
 
-    table_index = 0
+    '''table_index = 0
     for tables in table_of_samples_predictions:
         table_index += 1
         df = pd.DataFrame(list(zip(*tables)), columns=columns)
@@ -356,7 +356,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size
             col_iidx = df.columns.get_loc(column)
             excel_writer.sheets['equations'].set_column(col_iidx, col_iidx, column_width)
 
-        excel_writer._save()
+        excel_writer._save()'''
 
     '''table_of_mode_sequences_transposed = np.array(table_of_mode_sequences).T
     df = pd.DataFrame(list(zip(*table_of_mode_sequences_transposed)), columns=column_sequences)
@@ -440,6 +440,290 @@ def simulate_architecture(modes, angles, parallel_modes_list, number_of_units, n
     #print(states_index)
     #for output in state_mapping.keys():
     #    print(output)
+    
+def simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, number_of_units, refidx, samples_on, reuse_on):
+    nTbW = 32
+    nTbH = 32
+    subset_size = 4
+    iterations = int(len(parallel_modes_list))
+    
+    for initial_index_x in range(0, nTbW, 16):
+    	for initial_index_y in range(0, nTbH, 16):
+    		simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1)
+    
+    states_index = 0
+    states_list_index = -1
+    state_mapping = {}
+    states_list = []
+    for index_x in range(0, 16, subset_size):
+        for index_y in range(0, 16, subset_size):
+            equations_constants_set = set()
+            equations_constants_samples_set = set()
+            equations_constants_reuse_map = {}
+            index = 0
+            states_list_index += 1
+            for i in range(iterations):
+                unit_equation_mapping = {}
+                unit_index = 0
+                parallel_modes_number = parallel_modes_list[i]
+                modes_subset = modes[index:index + parallel_modes_number]
+                angles_subset = angles[index:index + parallel_modes_number]
+                exit_buffer_unit_mapping = []
+                for mode, angle in zip(modes_subset, angles_subset):
+                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
+                        mode,
+                        angle,
+                        nTbW,
+                        nTbH,
+                        "fc_heuristic",
+                        equations_constants_set,
+                        equations_constants_samples_set,
+                        equations_constants_reuse_map,
+                        index_x=index_x,
+                        index_y=index_y,
+                        subset_size=subset_size,
+                        refidx=refidx,
+                        samples=samples_on,
+                        reuse=reuse_on,
+                        create_table=False)
+
+                    for equations_column in equations:
+                        for equation in equations_column:
+                            if equation not in unit_equation_mapping.keys():
+                                unit_equation_mapping[equation] = unit_index
+                                unit_index += 1
+
+                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
+
+                str_exit_buffer = str(exit_buffer_unit_mapping)
+                match = False
+                state_mapping_list = list(state_mapping.keys())
+                states_index = 0
+                while match == False and states_index < len(state_mapping_list):
+                    if str_exit_buffer in state_mapping_list[states_index]:
+                        states_index = state_mapping[str_exit_buffer]
+                        match = True
+                    else:
+                        states_index += 1
+
+                if not match:
+                    state_mapping[str_exit_buffer] = states_index
+
+                states_list.append(states_index)
+
+                index += parallel_modes_number
+
+    print(states_list)
+    #print(states_index)
+    #for output in state_mapping.keys():
+    #    print(output)
+    
+    state_mapping = {}
+    states_list = []
+    for index_x in range(16, 32, subset_size):
+        for index_y in range(0, 16, subset_size):
+            equations_constants_set = set()
+            equations_constants_samples_set = set()
+            equations_constants_reuse_map = {}
+            index = 0
+            states_list_index += 1
+            for i in range(iterations):
+                unit_equation_mapping = {}
+                unit_index = 0
+                parallel_modes_number = parallel_modes_list[i]
+                modes_subset = modes[index:index + parallel_modes_number]
+                angles_subset = angles[index:index + parallel_modes_number]
+                exit_buffer_unit_mapping = []
+                for mode, angle in zip(modes_subset, angles_subset):
+                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
+                        mode,
+                        angle,
+                        nTbW,
+                        nTbH,
+                        "fc_heuristic",
+                        equations_constants_set,
+                        equations_constants_samples_set,
+                        equations_constants_reuse_map,
+                        index_x=index_x,
+                        index_y=index_y,
+                        subset_size=subset_size,
+                        refidx=refidx,
+                        samples=samples_on,
+                        reuse=reuse_on,
+                        create_table=False)
+
+                    for equations_column in equations:
+                        for equation in equations_column:
+                            if equation not in unit_equation_mapping.keys():
+                                unit_equation_mapping[equation] = unit_index
+                                unit_index += 1
+
+                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
+
+                str_exit_buffer = str(exit_buffer_unit_mapping)
+                match = False
+                state_mapping_list = list(state_mapping.keys())
+                states_index = 0
+                while match == False and states_index < len(state_mapping_list):
+                    if str_exit_buffer in state_mapping_list[states_index]:
+                        states_index = state_mapping[str_exit_buffer]
+                        match = True
+                    else:
+                        states_index += 1
+
+                if not match:
+                    state_mapping[str_exit_buffer] = states_index
+
+                states_list.append(states_index)
+
+                index += parallel_modes_number
+
+    print(states_list)
+    #print(states_index)
+    #for output in state_mapping.keys():
+    #    print(output)
+    
+    state_mapping = {}
+    states_list = []
+    for index_x in range(0, 16, subset_size):
+        for index_y in range(16, 32, subset_size):
+            equations_constants_set = set()
+            equations_constants_samples_set = set()
+            equations_constants_reuse_map = {}
+            index = 0
+            states_list_index += 1
+            for i in range(iterations):
+                unit_equation_mapping = {}
+                unit_index = 0
+                parallel_modes_number = parallel_modes_list[i]
+                modes_subset = modes[index:index + parallel_modes_number]
+                angles_subset = angles[index:index + parallel_modes_number]
+                exit_buffer_unit_mapping = []
+                for mode, angle in zip(modes_subset, angles_subset):
+                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
+                        mode,
+                        angle,
+                        nTbW,
+                        nTbH,
+                        "fc_heuristic",
+                        equations_constants_set,
+                        equations_constants_samples_set,
+                        equations_constants_reuse_map,
+                        index_x=index_x,
+                        index_y=index_y,
+                        subset_size=subset_size,
+                        refidx=refidx,
+                        samples=samples_on,
+                        reuse=reuse_on,
+                        create_table=False)
+
+                    for equations_column in equations:
+                        for equation in equations_column:
+                            if equation not in unit_equation_mapping.keys():
+                                unit_equation_mapping[equation] = unit_index
+                                unit_index += 1
+
+                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
+
+                str_exit_buffer = str(exit_buffer_unit_mapping)
+                match = False
+                state_mapping_list = list(state_mapping.keys())
+                states_index = 0
+                while match == False and states_index < len(state_mapping_list):
+                    if str_exit_buffer in state_mapping_list[states_index]:
+                        states_index = state_mapping[str_exit_buffer]
+                        match = True
+                    else:
+                        states_index += 1
+
+                if not match:
+                    state_mapping[str_exit_buffer] = states_index
+
+                states_list.append(states_index)
+
+                index += parallel_modes_number
+
+    print(states_list)
+    #print(states_index)
+    #for output in state_mapping.keys():
+    #    print(output)
+    
+    state_mapping = {}
+    states_list = []
+    for index_x in range(16, 32, subset_size):
+        for index_y in range(16, 32, subset_size):
+            equations_constants_set = set()
+            equations_constants_samples_set = set()
+            equations_constants_reuse_map = {}
+            index = 0
+            states_list_index += 1
+            for i in range(iterations):
+                unit_equation_mapping = {}
+                unit_index = 0
+                parallel_modes_number = parallel_modes_list[i]
+                modes_subset = modes[index:index + parallel_modes_number]
+                angles_subset = angles[index:index + parallel_modes_number]
+                exit_buffer_unit_mapping = []
+                for mode, angle in zip(modes_subset, angles_subset):
+                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
+                        mode,
+                        angle,
+                        nTbW,
+                        nTbH,
+                        "fc_heuristic",
+                        equations_constants_set,
+                        equations_constants_samples_set,
+                        equations_constants_reuse_map,
+                        index_x=index_x,
+                        index_y=index_y,
+                        subset_size=subset_size,
+                        refidx=refidx,
+                        samples=samples_on,
+                        reuse=reuse_on,
+                        create_table=False)
+
+                    for equations_column in equations:
+                        for equation in equations_column:
+                            if equation not in unit_equation_mapping.keys():
+                                unit_equation_mapping[equation] = unit_index
+                                unit_index += 1
+
+                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
+
+                str_exit_buffer = str(exit_buffer_unit_mapping)
+                match = False
+                state_mapping_list = list(state_mapping.keys())
+                states_index = 0
+                while match == False and states_index < len(state_mapping_list):
+                    if str_exit_buffer in state_mapping_list[states_index]:
+                        states_index = state_mapping[str_exit_buffer]
+                        match = True
+                    else:
+                        states_index += 1
+
+                if not match:
+                    state_mapping[str_exit_buffer] = states_index
+
+                states_list.append(states_index)
+
+                index += parallel_modes_number
+
+    print(states_list)
+    #print(states_index)
+    #for output in state_mapping.keys():
+    #    print(output)
+    
+    
+def simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, number_of_units, refidx, samples_on, reuse_on):
+    nTbW = 64
+    nTbH = 64
+    subset_size = 4
+    iterations = int(len(parallel_modes_list))
+    
+    for initial_index_x in range(0, nTbW, 16):
+    	for initial_index_y in range(0, nTbH, 16):
+   	
+    		simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1)
 
 def simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type = -1, refidx = 0, cidx = 0):
     iterations = int(len(parallel_modes_list))

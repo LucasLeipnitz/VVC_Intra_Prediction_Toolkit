@@ -11,16 +11,16 @@ input_modes = gen.all_modes
 #parallel_modes_list = [16,9,3,3,2,3,5,24] #otimo 64x64
 #parallel_modes_list = [len(input_modes)]
 #parallel_modes_list = [1 for i in range(int(len(input_modes)))]
-#parallel_modes_list = [8, 12, 3, 2, 3, 2, 1, 3, 1, 2, 3, 2, 3, 12, 8] #para 16x16
-#parallel_modes_list = [8, 12, 3, 5, 3, 3, 3, 5, 3, 12, 8] #para 16x16
+#parallel_modes_list = [8, 12, 3, 2, 3, 2, 1, 3, 1, 2, 3, 2, 3, 12, 8] #para 32x32
+#parallel_modes_list = [20, 6, 5, 3, 5, 6, 20] #para 16x16
 parallel_modes_list = [20, 9, 7, 9, 20] #para 4x4
 
 buffer_type = -1
 global_buffer_type = 1
 block_size = 64
-nTbW = 64
-nTbH = 64
-subset_size = 16
+nTbW = 32
+nTbH = 32
+subset_size = 4
 assert_equals = 1
 normalize = False
 heuristic_on = True
@@ -34,7 +34,7 @@ def main(modes, control = -1):
 
     angles = gen.map_modes_to_angles(modes)
 
-    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized, filter_coefficients_set = gen.transform_coefficients(n_average_fc, n_average_fg, True, False )
+    filter_column_list, filter_column_list_normalized, filter_coefficient, filter_coefficient_normalized, filter_coefficients_set = gen.transform_coefficients(n_average_fc, n_average_fg, False, False )
 
     if n_samples >= 4:
         filter_column_list = gen.generate_coefficients_for_parallel_prediction(filter_column_list, n_samples, True)
@@ -52,9 +52,11 @@ def main(modes, control = -1):
                 equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(mode, angle, nTbW, nTbH, "fc_heuristic", equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size = 0, refidx = 0, cidx = 0, samples = samples_on, reuse = reuse_on, create_table = True)
 
         case 2:
-            #sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
+            #sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, 16, 0, 32, 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
             #sim.simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type, 0, 0)
-            sim.simulate_architecture(modes, angles, parallel_modes_list, 120, nTbW, nTbH, subset_size, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
+            #sim.simulate_architecture(modes, angles, parallel_modes_list, 120, nTbW, nTbH, subset_size, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
+            #sim.simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
+            sim.simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
         case 3:
             gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
         case 4:
