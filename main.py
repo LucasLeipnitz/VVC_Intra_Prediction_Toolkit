@@ -5,28 +5,29 @@ from transform_block import TransformBlock
 
 path_input_modes = "./input/modes/"
 
-option = 8
+option = 2
 input_modes = gen.all_modes
 #parallel_modes_list = [5,24,2,4,5,25] #otimo 4x4
 #parallel_modes_list = [16,9,3,3,2,3,5,24] #otimo 64x64
 #parallel_modes_list = [len(input_modes)]
 #parallel_modes_list = [1 for i in range(int(len(input_modes)))]
 #parallel_modes_list = [8, 12, 3, 2, 3, 2, 1, 3, 1, 2, 3, 2, 3, 12, 8] #para 16x16
+#parallel_modes_list = [8, 12, 3, 5, 3, 3, 3, 5, 3, 12, 8] #para 16x16
 parallel_modes_list = [20, 9, 7, 9, 20] #para 4x4
 
 buffer_type = -1
 global_buffer_type = 1
-block_size = 8
-nTbW = 8
-nTbH = 8
-subset_size = 4
+block_size = 64
+nTbW = 64
+nTbH = 64
+subset_size = 16
 assert_equals = 1
 normalize = False
 heuristic_on = True
 samples_on = True
 reuse_on = True
-n_average_fc = 8
-n_average_fg = 8
+n_average_fc = 16
+n_average_fg = 16
 n_samples = 1
 
 def main(modes, control = -1):
@@ -51,9 +52,9 @@ def main(modes, control = -1):
                 equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(mode, angle, nTbW, nTbH, "fc_heuristic", equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size = 0, refidx = 0, cidx = 0, samples = samples_on, reuse = reuse_on, create_table = True)
 
         case 2:
-            sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
+            #sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
             #sim.simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type, 0, 0)
-            #sim.simulate_architecture(modes, angles, parallel_modes_list, 120, nTbW, nTbH, subset_size, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
+            sim.simulate_architecture(modes, angles, parallel_modes_list, 120, nTbW, nTbH, subset_size, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
         case 3:
             gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
         case 4:
@@ -84,12 +85,12 @@ def main(modes, control = -1):
                 #print("#####################################")
                 #ver.generate_programmable_blocks_n8(1, [[1,8,32,64], [1,2], [4,16], [-1, 1], [-1, 1], [1, 2]],filter_column_list_normalized)
                 #print("#####################################")
-                ver.generate_programmable_blocks_n8(2, [[1,4,32,48], [4,16], [-1, 1], [0,1], [-1,1], [0,1], [0,1]],
+                '''ver.generate_programmable_blocks_n8(2, [[1,4,32,48], [4,16], [-1, 1], [0,1], [-1,1], [0,1], [0,1]],
                                                   filter_column_list_normalized)
-                print("#####################################")
-                '''ver.generate_programmable_blocks_n8(3, [[1, 2, 4, 8, 16, 32], [1, 2, 4, 8, 16, 32],
-                                                      [1, 2, 4, 8, 16, 32], [-1, 1], [-1, 1], [0, 1]],
-                                                  filter_column_list_normalized)'''
+                print("#####################################")'''
+                ver.generate_programmable_blocks_n8(3, [[16], [4,8],
+                                                      [1,2], [-1, 1], [0, 1], [-1, 1], [0, 1]],
+                                                  filter_column_list_normalized)
 
         case 9:
             ver.verify_programmable_blocks_n8(0, [1,2,6,92,67,14,6],[-2, -10, -18, 1288, 670, 84, 12],

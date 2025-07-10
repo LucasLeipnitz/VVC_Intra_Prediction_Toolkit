@@ -307,6 +307,9 @@ def generate_programmable_blocks_n8(block, control_variables_set_list, filter_co
             print(B_values)
             #print(C_values)
         case 3:
+            A_values = set()
+            B_values = set()
+            C_values = set()
             for coefficient in filter_coefficient[3]:
                 match_coefficient = False
                 match_times = 0
@@ -315,30 +318,36 @@ def generate_programmable_blocks_n8(block, control_variables_set_list, filter_co
                     for B in control_variables_set_list[1]:
                         for C in control_variables_set_list[2]:
                             for D in control_variables_set_list[3]:
-                                for E in control_variables_set_list[4]:
-                                    for F in control_variables_set_list[5]:
-                                        x = B + C * D
-                                        out = F*(A - x) + (1-F)*x*E
-                                        if coefficient == out:
-                                            A_value = A
-                                            B_value = B
-                                            C_value = C
-                                            control_sequence_string = (
-                                                str(bin(control_variables_set_list[0].index(A))[2:]) + str(
-                                                bin(control_variables_set_list[1].index(B))[2:]) + str(
-                                                bin(control_variables_set_list[2].index(C))[2:]) + str(
-                                                bin(control_variables_set_list[3].index(D))[2:]) + str(
-                                                bin(control_variables_set_list[4].index(E))[2:]) + str(
-                                                bin(control_variables_set_list[5].index(F))[2:]))
-                                            control_sequences.append(control_sequence_string)
-                                            match_coefficient = True
-                                            match_times += 1
+                                for K in control_variables_set_list[4]:
+                                    for E in control_variables_set_list[5]:
+                                        for F in control_variables_set_list[6]:
+                                            x = B + C * D
+                                            y = K*x + (1-K)*1
+                                            out = F*(A - x) + (1-F)*y*E
+                                            if coefficient == out and not match_times:
+                                                A_values.add(A)
+                                                B_values.add(B)
+                                                C_values.add(C)
+                                                control_sequence_string = (
+                                                    str(bin(control_variables_set_list[0].index(A))[2:]) + str(
+                                                    bin(control_variables_set_list[1].index(B))[2:]) + str(
+                                                    bin(control_variables_set_list[2].index(C))[2:]) + str(
+                                                    bin(control_variables_set_list[3].index(D))[2:]) + str(
+                                                    bin(control_variables_set_list[4].index(K))[2:]) + str(
+                                                    bin(control_variables_set_list[5].index(E))[2:]) + str(
+                                                    bin(control_variables_set_list[6].index(F))[2:]))
+                                                control_sequences.append(control_sequence_string)
+                                                match_coefficient = True
+                                                match_times += 1
 
                 if match_coefficient:
                     print("Coefficient match:", coefficient)
                     print(control_sequences[0])
                 else:
                     print("Coefficient doesn't match:", coefficient)
+            print(A_values)
+            print(B_values)
+            print(C_values)
         case _:
             print("Select a value for block between 0 and 3")
 

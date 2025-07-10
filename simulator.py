@@ -436,8 +436,10 @@ def simulate_architecture(modes, angles, parallel_modes_list, number_of_units, n
                 index += parallel_modes_number
 
     print(states_list)
-    print(states_index)
-
+    print(max(states_list))
+    #print(states_index)
+    #for output in state_mapping.keys():
+    #    print(output)
 
 def simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type = -1, refidx = 0, cidx = 0):
     iterations = int(len(parallel_modes_list))
