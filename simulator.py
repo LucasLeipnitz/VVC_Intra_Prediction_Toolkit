@@ -102,7 +102,7 @@ def simulate_ADIP(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, s
                     max_size_modes = modes_subset.copy()
                 index += parallel_modes_number
 
-            print("Most expensive modes:", max_size_modes, max_size)
+            #print("Most expensive modes:", max_size_modes, max_size)
             table_of_mode_sequences.append(sequence)
             '''plt.rcParams['font.size'] = 4
             plt.figure(figsize=(12, 4))
@@ -300,7 +300,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
                         exit_buffer_dict[mode] = exit_buffer_size
 
 
-            #print("Most expensive modes:", max_size_modes, max_size)
+            print("Most expensive modes:", max_size_modes, max_size)
             table_of_mode_sequences.append(sequence)
             '''plt.rcParams['font.size'] = 4
             plt.figure(figsize=(12, 4))
@@ -578,7 +578,7 @@ def VBT_split(nTbW, nTbH, relative_position):
     if new_nTbW < 4 or detect_QT_block(new_nTbW, new_nTbH, relative_position) or detect_QT_block(new_nTbW, new_nTbH, (relative_position[0] + new_nTbW, relative_position[1])):
         return 0
 
-    print("VBT_split", new_nTbW, new_nTbH, relative_position, (relative_position[0] + new_nTbW, relative_position[1]))
+    #print("VBT_split", new_nTbW, new_nTbH, relative_position, (relative_position[0] + new_nTbW, relative_position[1]))
 
     number_of_blocks += MTT_split(new_nTbW, new_nTbH, relative_position)
     number_of_blocks += MTT_split(new_nTbW, new_nTbH, (relative_position[0] + new_nTbW, relative_position[1]))
@@ -591,7 +591,7 @@ def HBT_split(nTbW, nTbH, relative_position):
     if new_nTbH < 4 or detect_QT_block(new_nTbW, new_nTbH, relative_position) or detect_QT_block(new_nTbW, new_nTbH, (relative_position[0], relative_position[1] + new_nTbH)):
         return 0
 
-    print("HBT_split", new_nTbW, new_nTbH, relative_position, (relative_position[0], relative_position[1] + new_nTbH))
+    #print("HBT_split", new_nTbW, new_nTbH, relative_position, (relative_position[0], relative_position[1] + new_nTbH))
 
     number_of_blocks += MTT_split(new_nTbW, new_nTbH, relative_position)
     number_of_blocks += MTT_split(new_nTbW, new_nTbH, (relative_position[0], relative_position[1] + new_nTbH))
@@ -604,11 +604,17 @@ def VTT_split(nTbW, nTbH, relative_position):
     new_nTbH = nTbH
     if new_2_nTbW < 4:
         return 0
-
-    print("VTT_split", new_2_nTbW, new_nTbH, new_4_nTbW, new_nTbH, relative_position, (relative_position[0] + new_2_nTbW, relative_position[1]), (relative_position[0] + new_2_nTbW + new_4_nTbW, relative_position[1]))
+	
+    if detect_QT_block(new_2_nTbW, new_nTbH, relative_position):
+        if detect_QT_block(new_4_nTbW, new_nTbH, (relative_position[0] + new_2_nTbW, relative_position[1])):
+            return 0
+            
+        number_of_blocks += MTT_split(new_4_nTbW, new_nTbH, (relative_position[0] + new_2_nTbW, relative_position[1]))    
+        return number_of_blocks + 1
+	
+    #print("VTT_split", new_2_nTbW, new_nTbH, new_4_nTbW, relative_position, (relative_position[0] + new_2_nTbW, relative_position[1]), (relative_position[0] + new_2_nTbW + new_4_nTbW, relative_position[1]))
 
     number_of_blocks += MTT_split(new_2_nTbW, new_nTbH, relative_position)
-    number_of_blocks += MTT_split(new_4_nTbW, new_nTbH,(relative_position[0] + new_2_nTbW, relative_position[1]))
     number_of_blocks += MTT_split(new_2_nTbW, new_nTbH,(relative_position[0] + new_2_nTbW + new_4_nTbW, relative_position[1]))
     return number_of_blocks + 3
 
@@ -620,10 +626,16 @@ def HTT_split(nTbW, nTbH, relative_position):
     if new_2_nTbH < 4:
         return 0
 
-    print("HTT_split", new_nTbW, new_2_nTbH, new_nTbW, new_4_nTbH, relative_position, (relative_position[0], relative_position[1] + new_2_nTbH), (relative_position[0], relative_position[1] + new_2_nTbH + new_4_nTbH))
+    #print("HTT_split", new_nTbW, new_2_nTbH, new_4_nTbH, relative_position, (relative_position[0], relative_position[1] + new_2_nTbH), (relative_position[0], relative_position[1] + new_2_nTbH + new_4_nTbH))
+
+    if detect_QT_block(new_nTbW, new_2_nTbH, relative_position):
+        if detect_QT_block(new_nTbW, new_4_nTbH, (relative_position[0], relative_position[1] + new_2_nTbH)):
+            return 0
+        
+        number_of_blocks += MTT_split(new_nTbW, new_4_nTbH, (relative_position[0], relative_position[1] + new_2_nTbH))
+        return number_of_blocks + 1
 
     number_of_blocks += MTT_split(new_nTbW, new_2_nTbH, relative_position)
-    number_of_blocks += MTT_split(new_nTbW, new_4_nTbH, (relative_position[0], relative_position[1] + new_2_nTbH))
     number_of_blocks += MTT_split(new_nTbW, new_2_nTbH, (relative_position[0], relative_position[1] + new_2_nTbH + new_4_nTbH))
     return number_of_blocks + 3
 

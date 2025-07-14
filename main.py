@@ -12,17 +12,17 @@ input_modes = gen.all_modes
 #parallel_modes_list = [len(input_modes)]
 #parallel_modes_list = [1 for i in range(int(len(input_modes)))]
 #parallel_modes_list = [8, 12, 3, 2, 3, 2, 1, 3, 1, 2, 3, 2, 3, 12, 8] #para 32x32
-#parallel_modes_list = [20, 6, 5, 3, 5, 6, 20] #para 16x16
-parallel_modes_list = [20, 9, 7, 9, 20] #para 4x4
+parallel_modes_list = [6, 6, 8, 3,3, 2,3, 2,1, 3,2, 3,3, 8, 6, 6] #para 16x16
+#parallel_modes_list = [20, 9, 7, 9, 20] #para 4x4
 
 buffer_type = -1
 global_buffer_type = 1
 block_size = 64
-nTbW = 32
-nTbH = 32
+nTbW = 8
+nTbH = 8
 subset_size = 4
 assert_equals = 1
-normalize = False
+normalize = False	
 heuristic_on = True
 samples_on = True
 reuse_on = True
@@ -52,10 +52,10 @@ def main(modes, control = -1):
                 equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(mode, angle, nTbW, nTbH, "fc_heuristic", equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size = 0, refidx = 0, cidx = 0, samples = samples_on, reuse = reuse_on, create_table = True)
 
         case 2:
-            #sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, 16, 0, 32, 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
+            sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 8, 8, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
             #sim.simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type, 0, 0)
-            #sim.simulate_architecture(modes, angles, parallel_modes_list, 120, nTbW, nTbH, subset_size, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
-            sim.simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
+            sim.simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 8, 8, subset_size, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
+            #sim.simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
         case 3:
             gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
@@ -103,7 +103,7 @@ def main(modes, control = -1):
             sim.QT_split(64,64, leaf_mapping)
             print(leaf_mapping)
             print(16,16)
-            number_of_blocks = sim.MTT_split(16, 16, (0,0))
+            number_of_blocks = sim.MTT_split(64, 64, (0,0))
             print(number_of_blocks)
         case _:
             print("Select a value for control between 0 and 7")
