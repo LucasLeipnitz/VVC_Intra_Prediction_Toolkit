@@ -5,7 +5,7 @@ from transform_block import TransformBlock
 
 path_input_modes = "./input/modes/"
 
-option = 2
+option = 10
 input_modes = gen.all_modes
 #parallel_modes_list = [5,24,2,4,5,25] #otimo 4x4
 #parallel_modes_list = [16,9,3,3,2,3,5,24] #otimo 64x64
@@ -55,8 +55,8 @@ def main(modes, control = -1):
             #sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, 16, 0, 32, 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
             #sim.simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type, 0, 0)
             #sim.simulate_architecture(modes, angles, parallel_modes_list, 120, nTbW, nTbH, subset_size, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
-            #sim.simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
-            sim.simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
+            sim.simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
+            #sim.simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
         case 3:
             gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
         case 4:
@@ -98,6 +98,13 @@ def main(modes, control = -1):
             ver.verify_programmable_blocks_n8(0, [1,2,6,92,67,14,6],[-2, -10, -18, 1288, 670, 84, 12],
                                               ["00000", "01100", "01000", "11001", "01101", "01001", "00011"], [[4,8],[2,1],[-1,1],[0,1],[-1,2]])
             print("#####################################")
+        case 10:
+            leaf_mapping = {}
+            sim.QT_split(64,64, leaf_mapping)
+            print(leaf_mapping)
+            print(16,16)
+            number_of_blocks = sim.MTT_split(16, 16, (0,0))
+            print(number_of_blocks)
         case _:
             print("Select a value for control between 0 and 7")
     

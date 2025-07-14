@@ -272,13 +272,13 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
                         pass
 
                 # gen.generate_sorted_equations_set(equations_constants_set, True)
-                print("Subset:", index_x, index_y)
-                print("Modes:", modes_subset)
-                for equation in equations_constants_samples_set:
-                	print(equation)
+                #print("Subset:", index_x, index_y)
+                #print("Modes:", modes_subset)
+                '''for equation in equations_constants_samples_set:
+                    print(equation)'''
                 #size = len(equations_constants_samples_set - global_samples_buffer)
                 size = len(equations_constants_samples_set - buffer_equations)
-                print("Total N samples to be predicted:", len(equations_constants_samples_set))
+                #print("Total N samples to be predicted:", len(equations_constants_samples_set))
                 #print("N samples to be predicted (with cache): ", size)
                 #print("Cache size", buffer_size)
                 buffer_size_list.append(buffer_size)
@@ -372,14 +372,15 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
 
     excel_writer._save()'''
 
+    return max(list_of_samples_to_be_predicted)
 
-def simulate_architecture(modes, angles, parallel_modes_list, number_of_units, nTbW, nTbH, subset_size, refidx, samples_on, reuse_on):
+def simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, final_index_x, final_index_y, subset_size, refidx, samples_on, reuse_on):
     iterations = int(len(parallel_modes_list))
     states_index = 0
     state_mapping = {}
     states_list = []
-    for index_x in range(0, nTbW, subset_size):
-        for index_y in range(0, nTbH, subset_size):
+    for index_x in range(initial_index_x, final_index_x, subset_size):
+        for index_y in range(initial_index_y, final_index_y, subset_size):
             equations_constants_set = set()
             equations_constants_samples_set = set()
             equations_constants_reuse_map = {}
@@ -435,8 +436,8 @@ def simulate_architecture(modes, angles, parallel_modes_list, number_of_units, n
 
                 index += parallel_modes_number
 
-    print(states_list)
-    print(max(states_list))
+    #print(states_list)
+    print("States number", max(states_list))
     #print(states_index)
     #for output in state_mapping.keys():
     #    print(output)
@@ -445,285 +446,28 @@ def simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, num
     nTbW = 32
     nTbH = 32
     subset_size = 4
-    iterations = int(len(parallel_modes_list))
+    total_number_of_units = 0
     
     for initial_index_x in range(0, nTbW, 16):
-    	for initial_index_y in range(0, nTbH, 16):
-    		simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1)
-    
-    states_index = 0
-    states_list_index = -1
-    state_mapping = {}
-    states_list = []
-    for index_x in range(0, 16, subset_size):
-        for index_y in range(0, 16, subset_size):
-            equations_constants_set = set()
-            equations_constants_samples_set = set()
-            equations_constants_reuse_map = {}
-            index = 0
-            states_list_index += 1
-            for i in range(iterations):
-                unit_equation_mapping = {}
-                unit_index = 0
-                parallel_modes_number = parallel_modes_list[i]
-                modes_subset = modes[index:index + parallel_modes_number]
-                angles_subset = angles[index:index + parallel_modes_number]
-                exit_buffer_unit_mapping = []
-                for mode, angle in zip(modes_subset, angles_subset):
-                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
-                        mode,
-                        angle,
-                        nTbW,
-                        nTbH,
-                        "fc_heuristic",
-                        equations_constants_set,
-                        equations_constants_samples_set,
-                        equations_constants_reuse_map,
-                        index_x=index_x,
-                        index_y=index_y,
-                        subset_size=subset_size,
-                        refidx=refidx,
-                        samples=samples_on,
-                        reuse=reuse_on,
-                        create_table=False)
+        for initial_index_y in range(0, nTbH, 16):
+            total_number_of_units += simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1)
+            simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, refidx, samples_on, reuse_on)
 
-                    for equations_column in equations:
-                        for equation in equations_column:
-                            if equation not in unit_equation_mapping.keys():
-                                unit_equation_mapping[equation] = unit_index
-                                unit_index += 1
-
-                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
-
-                str_exit_buffer = str(exit_buffer_unit_mapping)
-                match = False
-                state_mapping_list = list(state_mapping.keys())
-                states_index = 0
-                while match == False and states_index < len(state_mapping_list):
-                    if str_exit_buffer in state_mapping_list[states_index]:
-                        states_index = state_mapping[str_exit_buffer]
-                        match = True
-                    else:
-                        states_index += 1
-
-                if not match:
-                    state_mapping[str_exit_buffer] = states_index
-
-                states_list.append(states_index)
-
-                index += parallel_modes_number
-
-    print(states_list)
-    #print(states_index)
-    #for output in state_mapping.keys():
-    #    print(output)
-    
-    state_mapping = {}
-    states_list = []
-    for index_x in range(16, 32, subset_size):
-        for index_y in range(0, 16, subset_size):
-            equations_constants_set = set()
-            equations_constants_samples_set = set()
-            equations_constants_reuse_map = {}
-            index = 0
-            states_list_index += 1
-            for i in range(iterations):
-                unit_equation_mapping = {}
-                unit_index = 0
-                parallel_modes_number = parallel_modes_list[i]
-                modes_subset = modes[index:index + parallel_modes_number]
-                angles_subset = angles[index:index + parallel_modes_number]
-                exit_buffer_unit_mapping = []
-                for mode, angle in zip(modes_subset, angles_subset):
-                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
-                        mode,
-                        angle,
-                        nTbW,
-                        nTbH,
-                        "fc_heuristic",
-                        equations_constants_set,
-                        equations_constants_samples_set,
-                        equations_constants_reuse_map,
-                        index_x=index_x,
-                        index_y=index_y,
-                        subset_size=subset_size,
-                        refidx=refidx,
-                        samples=samples_on,
-                        reuse=reuse_on,
-                        create_table=False)
-
-                    for equations_column in equations:
-                        for equation in equations_column:
-                            if equation not in unit_equation_mapping.keys():
-                                unit_equation_mapping[equation] = unit_index
-                                unit_index += 1
-
-                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
-
-                str_exit_buffer = str(exit_buffer_unit_mapping)
-                match = False
-                state_mapping_list = list(state_mapping.keys())
-                states_index = 0
-                while match == False and states_index < len(state_mapping_list):
-                    if str_exit_buffer in state_mapping_list[states_index]:
-                        states_index = state_mapping[str_exit_buffer]
-                        match = True
-                    else:
-                        states_index += 1
-
-                if not match:
-                    state_mapping[str_exit_buffer] = states_index
-
-                states_list.append(states_index)
-
-                index += parallel_modes_number
-
-    print(states_list)
-    #print(states_index)
-    #for output in state_mapping.keys():
-    #    print(output)
-    
-    state_mapping = {}
-    states_list = []
-    for index_x in range(0, 16, subset_size):
-        for index_y in range(16, 32, subset_size):
-            equations_constants_set = set()
-            equations_constants_samples_set = set()
-            equations_constants_reuse_map = {}
-            index = 0
-            states_list_index += 1
-            for i in range(iterations):
-                unit_equation_mapping = {}
-                unit_index = 0
-                parallel_modes_number = parallel_modes_list[i]
-                modes_subset = modes[index:index + parallel_modes_number]
-                angles_subset = angles[index:index + parallel_modes_number]
-                exit_buffer_unit_mapping = []
-                for mode, angle in zip(modes_subset, angles_subset):
-                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
-                        mode,
-                        angle,
-                        nTbW,
-                        nTbH,
-                        "fc_heuristic",
-                        equations_constants_set,
-                        equations_constants_samples_set,
-                        equations_constants_reuse_map,
-                        index_x=index_x,
-                        index_y=index_y,
-                        subset_size=subset_size,
-                        refidx=refidx,
-                        samples=samples_on,
-                        reuse=reuse_on,
-                        create_table=False)
-
-                    for equations_column in equations:
-                        for equation in equations_column:
-                            if equation not in unit_equation_mapping.keys():
-                                unit_equation_mapping[equation] = unit_index
-                                unit_index += 1
-
-                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
-
-                str_exit_buffer = str(exit_buffer_unit_mapping)
-                match = False
-                state_mapping_list = list(state_mapping.keys())
-                states_index = 0
-                while match == False and states_index < len(state_mapping_list):
-                    if str_exit_buffer in state_mapping_list[states_index]:
-                        states_index = state_mapping[str_exit_buffer]
-                        match = True
-                    else:
-                        states_index += 1
-
-                if not match:
-                    state_mapping[str_exit_buffer] = states_index
-
-                states_list.append(states_index)
-
-                index += parallel_modes_number
-
-    print(states_list)
-    #print(states_index)
-    #for output in state_mapping.keys():
-    #    print(output)
-    
-    state_mapping = {}
-    states_list = []
-    for index_x in range(16, 32, subset_size):
-        for index_y in range(16, 32, subset_size):
-            equations_constants_set = set()
-            equations_constants_samples_set = set()
-            equations_constants_reuse_map = {}
-            index = 0
-            states_list_index += 1
-            for i in range(iterations):
-                unit_equation_mapping = {}
-                unit_index = 0
-                parallel_modes_number = parallel_modes_list[i]
-                modes_subset = modes[index:index + parallel_modes_number]
-                angles_subset = angles[index:index + parallel_modes_number]
-                exit_buffer_unit_mapping = []
-                for mode, angle in zip(modes_subset, angles_subset):
-                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
-                        mode,
-                        angle,
-                        nTbW,
-                        nTbH,
-                        "fc_heuristic",
-                        equations_constants_set,
-                        equations_constants_samples_set,
-                        equations_constants_reuse_map,
-                        index_x=index_x,
-                        index_y=index_y,
-                        subset_size=subset_size,
-                        refidx=refidx,
-                        samples=samples_on,
-                        reuse=reuse_on,
-                        create_table=False)
-
-                    for equations_column in equations:
-                        for equation in equations_column:
-                            if equation not in unit_equation_mapping.keys():
-                                unit_equation_mapping[equation] = unit_index
-                                unit_index += 1
-
-                            exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
-
-                str_exit_buffer = str(exit_buffer_unit_mapping)
-                match = False
-                state_mapping_list = list(state_mapping.keys())
-                states_index = 0
-                while match == False and states_index < len(state_mapping_list):
-                    if str_exit_buffer in state_mapping_list[states_index]:
-                        states_index = state_mapping[str_exit_buffer]
-                        match = True
-                    else:
-                        states_index += 1
-
-                if not match:
-                    state_mapping[str_exit_buffer] = states_index
-
-                states_list.append(states_index)
-
-                index += parallel_modes_number
-
-    print(states_list)
-    #print(states_index)
-    #for output in state_mapping.keys():
-    #    print(output)
+    print(total_number_of_units)
     
     
 def simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, number_of_units, refidx, samples_on, reuse_on):
     nTbW = 64
     nTbH = 64
     subset_size = 4
-    iterations = int(len(parallel_modes_list))
-    
+    total_number_of_units = 0
+
     for initial_index_x in range(0, nTbW, 16):
-    	for initial_index_y in range(0, nTbH, 16):
-   	
-    		simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1)
+        for initial_index_y in range(0, nTbH, 16):
+            total_number_of_units += simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1)
+            simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, refidx, samples_on, reuse_on)
+
+    print(total_number_of_units)
 
 def simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type = -1, refidx = 0, cidx = 0):
     iterations = int(len(parallel_modes_list))
@@ -797,3 +541,97 @@ def simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, sa
     for samples_size in samples_size_list_transposed:
         list_of_max_sizes.append(int(max(samples_size)))
     print(list_of_max_sizes)
+
+
+def calculate_QT_leafs(nTbW, nTbH):
+    split_list = []
+    if nTbW//2 >= 4:
+        split_list += [[nTbW//2, nTbH//2], [nTbW//2, nTbH//2], [nTbW//2, nTbH//2], [nTbW//2, nTbH//2]]
+
+    return split_list
+
+
+def QT_split(nTbW, nTbH, leaf_mapping):
+    if str([nTbW,nTbH]) not in leaf_mapping:
+        leaf_mapping[str([nTbW, nTbH])] = 0
+
+    leaf_mapping[str([nTbW, nTbH])] += 1
+
+    split_list = calculate_QT_leafs(nTbW, nTbH)
+
+    for split in split_list:
+        new_nTbW = split[0]
+        new_nTbH = split[1]
+        QT_split(new_nTbW, new_nTbH, leaf_mapping)
+
+
+def detect_QT_block(nTbW, nTbH, relative_position):
+    if nTbW == nTbH and (relative_position[0] % nTbW  == 0) and (relative_position[1] % nTbH == 0):
+        return True
+
+    return False
+
+def VBT_split(nTbW, nTbH, relative_position):
+    number_of_blocks = 0
+    new_nTbW = nTbW//2
+    new_nTbH = nTbH
+    if new_nTbW < 4 or detect_QT_block(new_nTbW, new_nTbH, relative_position) or detect_QT_block(new_nTbW, new_nTbH, (relative_position[0] + new_nTbW, relative_position[1])):
+        return 0
+
+    print("VBT_split", new_nTbW, new_nTbH, relative_position, (relative_position[0] + new_nTbW, relative_position[1]))
+
+    number_of_blocks += MTT_split(new_nTbW, new_nTbH, relative_position)
+    number_of_blocks += MTT_split(new_nTbW, new_nTbH, (relative_position[0] + new_nTbW, relative_position[1]))
+    return number_of_blocks + 2
+
+def HBT_split(nTbW, nTbH, relative_position):
+    number_of_blocks = 0
+    new_nTbW = nTbW
+    new_nTbH = nTbH // 2
+    if new_nTbH < 4 or detect_QT_block(new_nTbW, new_nTbH, relative_position) or detect_QT_block(new_nTbW, new_nTbH, (relative_position[0], relative_position[1] + new_nTbH)):
+        return 0
+
+    print("HBT_split", new_nTbW, new_nTbH, relative_position, (relative_position[0], relative_position[1] + new_nTbH))
+
+    number_of_blocks += MTT_split(new_nTbW, new_nTbH, relative_position)
+    number_of_blocks += MTT_split(new_nTbW, new_nTbH, (relative_position[0], relative_position[1] + new_nTbH))
+    return number_of_blocks + 2
+
+def VTT_split(nTbW, nTbH, relative_position):
+    number_of_blocks = 0
+    new_4_nTbW = nTbW // 2
+    new_2_nTbW = new_4_nTbW // 2
+    new_nTbH = nTbH
+    if new_2_nTbW < 4:
+        return 0
+
+    print("VTT_split", new_2_nTbW, new_nTbH, new_4_nTbW, new_nTbH, relative_position, (relative_position[0] + new_2_nTbW, relative_position[1]), (relative_position[0] + new_2_nTbW + new_4_nTbW, relative_position[1]))
+
+    number_of_blocks += MTT_split(new_2_nTbW, new_nTbH, relative_position)
+    number_of_blocks += MTT_split(new_4_nTbW, new_nTbH,(relative_position[0] + new_2_nTbW, relative_position[1]))
+    number_of_blocks += MTT_split(new_2_nTbW, new_nTbH,(relative_position[0] + new_2_nTbW + new_4_nTbW, relative_position[1]))
+    return number_of_blocks + 3
+
+def HTT_split(nTbW, nTbH, relative_position):
+    number_of_blocks = 0
+    new_4_nTbH = nTbH // 2
+    new_2_nTbH = new_4_nTbH // 2
+    new_nTbW = nTbW
+    if new_2_nTbH < 4:
+        return 0
+
+    print("HTT_split", new_nTbW, new_2_nTbH, new_nTbW, new_4_nTbH, relative_position, (relative_position[0], relative_position[1] + new_2_nTbH), (relative_position[0], relative_position[1] + new_2_nTbH + new_4_nTbH))
+
+    number_of_blocks += MTT_split(new_nTbW, new_2_nTbH, relative_position)
+    number_of_blocks += MTT_split(new_nTbW, new_4_nTbH, (relative_position[0], relative_position[1] + new_2_nTbH))
+    number_of_blocks += MTT_split(new_nTbW, new_2_nTbH, (relative_position[0], relative_position[1] + new_2_nTbH + new_4_nTbH))
+    return number_of_blocks + 3
+
+def MTT_split(nTbW, nTbH, relative_position):
+
+    number_of_blocks = 0
+    number_of_blocks += VBT_split(nTbW, nTbH, relative_position)
+    number_of_blocks += HBT_split(nTbW, nTbH, relative_position)
+    number_of_blocks += VTT_split(nTbW, nTbH, relative_position)
+    number_of_blocks += HTT_split(nTbW, nTbH, relative_position)
+    return number_of_blocks
