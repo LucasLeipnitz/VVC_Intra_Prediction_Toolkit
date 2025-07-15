@@ -176,8 +176,8 @@ def count_effective_and_reused_equations(cache, equations, mode):
 
     return len(effective_equation_set)
 
-def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, final_index_x, final_index_y, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1):
-    pred_cache = cache_c(int((nTbH/subset_size)/2))
+def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, final_index_x, final_index_y, subset_size_x, subset_size_y, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1):
+    pred_cache = cache_c(int((nTbH/subset_size_y)/2))
     iterations = int(len(parallel_modes_list))
     buffer_size_list = []
     exit_buffer_dict = {}
@@ -188,7 +188,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
 
     global_samples_buffer_list = [set() for i in range(iterations)]
     list_of_samples_predictions = [[] for i in range(iterations)]
-    table_of_samples_predictions = [[[0 for i in range(0, nTbH, subset_size)] for j in range(0, nTbW, subset_size)] for k in range(iterations)]
+    table_of_samples_predictions = [[[0 for i in range(0, nTbH, subset_size_y)] for j in range(0, nTbW, subset_size_x)] for k in range(iterations)]
 
     column_sequences = [""]
     chunks = [modes[i:i + len(modes)] for i in range(0, len(modes), len(modes))]
@@ -201,9 +201,9 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
     columns = []
     global_samples_buffer = set()
     list_of_samples_to_be_predicted = []
-    for index_x in range(initial_index_x, final_index_x, subset_size):
+    for index_x in range(initial_index_x, final_index_x, subset_size_x):
         columns.append(index_x)
-        for index_y in range(initial_index_y, final_index_y, subset_size):
+        for index_y in range(initial_index_y, final_index_y, subset_size_y):
             sequence = [str(index_x) + ", " + str(index_y)]
             index = 0
             list_of_modes = []
@@ -228,7 +228,8 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
                         equations_constants_reuse_map,
                         index_x=index_x,
                         index_y=index_y,
-                        subset_size=subset_size,
+                        subset_size_x =subset_size_x,
+                        subset_size_y =subset_size_y,
                         refidx=refidx,
                         samples=samples_on,
                         reuse=reuse_on,
@@ -286,7 +287,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
                 list_of_samples_to_be_predicted.append(size)
                 list_of_modes.append(str(modes_subset))
                 list_of_samples_predictions[i].append(size)
-                table_of_samples_predictions[i][int(index_x/subset_size)][int(index_y/subset_size)] = size
+                table_of_samples_predictions[i][int(index_x/subset_size_x)][int(index_y/subset_size_y)] = size
                 sequence.append(str(size))
 
                 if max_size <= size:
@@ -374,13 +375,13 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
 
     return max(list_of_samples_to_be_predicted)
 
-def simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, final_index_x, final_index_y, subset_size, refidx, samples_on, reuse_on):
+def simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, final_index_x, final_index_y, subset_size_x, subset_size_y, refidx, samples_on, reuse_on):
     iterations = int(len(parallel_modes_list))
     states_index = 0
     state_mapping = {}
     states_list = []
-    for index_x in range(initial_index_x, final_index_x, subset_size):
-        for index_y in range(initial_index_y, final_index_y, subset_size):
+    for index_x in range(initial_index_x, final_index_x, subset_size_x):
+        for index_y in range(initial_index_y, final_index_y, subset_size_y):
             equations_constants_set = set()
             equations_constants_samples_set = set()
             equations_constants_reuse_map = {}
@@ -404,7 +405,8 @@ def simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, initia
                         equations_constants_reuse_map,
                         index_x=index_x,
                         index_y=index_y,
-                        subset_size=subset_size,
+                        subset_size_x = subset_size_x, 
+                        subset_size_y = subset_size_y,
                         refidx=refidx,
                         samples=samples_on,
                         reuse=reuse_on,

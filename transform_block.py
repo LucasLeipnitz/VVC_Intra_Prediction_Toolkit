@@ -194,14 +194,18 @@ class TransformBlock:
 
             self.equations_reuse.append(current_column)'''
 
-    def get_equations(self, index_x = 0, index_y = 0, subset_size = 0):
-        if subset_size <= 0:
+    def get_equations(self, index_x = 0, index_y = 0, subset_size_x = 0, subset_size_y = 0):
+        if subset_size_y <= 0:
             subset_size = self.nTbH
+            
+        if subset_size_x <= 0:
+            subset_size = self.nTbW
+               	
 
         list_of_equations = []
-        for x in range(index_x, index_x + subset_size):
+        for x in range(index_x, index_x + subset_size_x):
             equations = []
-            for y in range(index_y, index_y + subset_size):
+            for y in range(index_y, index_y + subset_size_y):
                 equations.append(self.equations[x][y])
 
             list_of_equations.append(equations)
