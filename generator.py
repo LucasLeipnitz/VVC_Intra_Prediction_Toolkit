@@ -897,12 +897,12 @@ def generate_rom(filter_column_lists, filter_coefficients_normalized):
     print(rom)
 
 
-def generate_angular_mode_mapping(modes_states_list):
+def generate_angular_mode_mapping(f, modes_states_list):
     mode_index = 0
     for modes_state in modes_states_list:
         output_index = 0
         for module_output in modes_state:
-            print("output(" + str(mode_index) + ")(" + str(output_index) + ") <= input(" + str(module_output) + ");")
+            f.write("output(" + str(mode_index) + ", " + str(output_index) + ") <= input(" + str(module_output) + ");\n")
             output_index += 1
 
         mode_index += 1

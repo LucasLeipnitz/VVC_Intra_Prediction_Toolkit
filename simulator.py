@@ -1,6 +1,7 @@
 import generator as gen
 import matplotlib.pyplot as plt
 import pandas as pd
+import math as mh
 import re
 import numpy as np
 from cache import Cache as cache_c
@@ -452,14 +453,19 @@ def transform_in_matrix(mode_exit_mapping, subset_size_x, subset_size_y):
 
 
 def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, final_index_x, final_index_y, subset_size_x, subset_size_y, refidx, samples_on, reuse_on):
+    size = len(parallel_modes_list)
+    control_size = int(mh.log2(size))
     iterations = int(len(parallel_modes_list))
     state_mapping = {}
+    f = open("states_"+ str(subset_size_x) + "x" + str(subset_size_y) + "_" + str(nTbW) + "x" + str(nTbH) + ".txt", "x")
     for index_x in range(initial_index_x, final_index_x, subset_size_x):
         for index_y in range(initial_index_y, final_index_y, subset_size_y):
             equations_constants_set = set()
             equations_constants_samples_set = set()
             equations_constants_reuse_map = {}
             index = 0
+            f.write("Block " + str(index_x) + " " + str(index_y) + ":\n")
+            f.write("case iteration_control is\n")
             for i in range(iterations):
                 unit_equation_mapping = {}
                 unit_index = 0
@@ -469,6 +475,7 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
                 modes_states_list = []
                 exit_buffer_unit_mapping = []
                 mode_index = 0
+                f.write("when " + '"' + str(bin(i)[2:].zfill(control_size)) + '"' + " =>\n")
                 for mode, angle in zip(modes_subset, angles_subset):
                     mode_exit_mapping = []
                     equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
@@ -506,10 +513,12 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
                 state_mapping_list = list(state_mapping.keys())
                 states_index = 0
                 index += parallel_modes_number
-                gen.generate_angular_mode_mapping(modes_states_list)
+                gen.generate_angular_mode_mapping(f, modes_states_list)
     #print(states_list)
     #print("States number", max(states_list))
     #print(states_index)
+    
+    f.close()
     
 def simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, number_of_units, refidx, samples_on, reuse_on):
     nTbW = 32
