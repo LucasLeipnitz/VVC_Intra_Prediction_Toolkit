@@ -895,3 +895,14 @@ def generate_rom(filter_column_lists, filter_coefficients_normalized):
         i += 1
 
     print(rom)
+
+
+def generate_angular_mode_mapping(modes_states_list):
+    mode_index = 0
+    for modes_state in modes_states_list:
+        output_index = 0
+        for module_output in modes_state:
+            print("output(" + str(mode_index) + ")(" + str(output_index) + ") <= input(" + str(module_output) + ");")
+            output_index += 1
+
+        mode_index += 1
