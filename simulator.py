@@ -457,14 +457,15 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
     control_size = int(mh.log2(size))
     iterations = int(len(parallel_modes_list))
     state_mapping = {}
-    f = open("states_"+ str(subset_size_x) + "x" + str(subset_size_y) + "_" + str(nTbW) + "x" + str(nTbH) + ".txt", "x")
+    f = open("states_"+ str(subset_size_x) + "x" + str(subset_size_y) + "_" + str(nTbW) + "x" + str(nTbH) + ".txt", "w")
+    block_counter = 0
     for index_x in range(initial_index_x, final_index_x, subset_size_x):
         for index_y in range(initial_index_y, final_index_y, subset_size_y):
             equations_constants_set = set()
             equations_constants_samples_set = set()
             equations_constants_reuse_map = {}
             index = 0
-            f.write("Block " + str(index_x) + " " + str(index_y) + ":\n")
+            f.write("elsif control = " + '"' + str(bin(block_counter)[2:].zfill(3)) + '"' + " then \n")
             f.write("case iteration_control is\n")
             for i in range(iterations):
                 unit_equation_mapping = {}
@@ -508,12 +509,20 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
                     #modes_states_list[mode_index].append(transform_in_matrix(mode_exit_mapping, subset_size_x, subset_size_y))
                     modes_states_list.append(mode_exit_mapping)
 
+                    print("Mode exit", mode_exit_mapping)
+                    print("Exit buffer", exit_buffer_unit_mapping)
+
                 str_exit_buffer = str(exit_buffer_unit_mapping)
                 match = False
                 state_mapping_list = list(state_mapping.keys())
                 states_index = 0
                 index += parallel_modes_number
-                gen.generate_angular_mode_mapping(f, modes_states_list)
+            print("Next block")
+                #gen.generate_angular_mode_mapping(f, modes_states_list)
+            f.write("when others => for i in 0 to 7 loop for j in 0 to 255 loop output(i,j) <= " + '"' + "00000000" + '"' + "; end loop; end loop;\n")
+            f.write("end case;\n")
+            block_counter += 1
+
     #print(states_list)
     #print("States number", max(states_list))
     #print(states_index)
