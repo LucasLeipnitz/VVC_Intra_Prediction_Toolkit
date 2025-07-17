@@ -457,6 +457,7 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
     control_size = int(mh.log2(size))
     iterations = int(len(parallel_modes_list))
     state_mapping = {}
+    modes_states_list = []
     f = open("states_"+ str(subset_size_x) + "x" + str(subset_size_y) + "_" + str(nTbW) + "x" + str(nTbH) + ".txt", "w")
     block_counter = 0
     for index_x in range(initial_index_x, final_index_x, subset_size_x):
@@ -465,9 +466,9 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
             equations_constants_samples_set = set()
             equations_constants_reuse_map = {}
             index = 0
-            f.write("elsif control = " + '"' + str(bin(block_counter)[2:].zfill(3)) + '"' + " then \n")
-            f.write("case iteration_control is\n")
-            for i in range(iterations):
+            #f.write("elsif control = " + '"' + str(bin(block_counter)[2:].zfill(3)) + '"' + " then \n")
+            #f.write("case iteration_control is\n")
+            for i in range(iterations):         
                 unit_equation_mapping = {}
                 unit_index = 0
                 parallel_modes_number = parallel_modes_list[i]
@@ -476,8 +477,8 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
                 modes_states_list = []
                 exit_buffer_unit_mapping = []
                 mode_index = 0
-                f.write("when " + '"' + str(bin(i)[2:].zfill(control_size)) + '"' + " =>\n")
-                for mode, angle in zip(modes_subset, angles_subset):
+                #f.write("when " + '"' + str(bin(i)[2:].zfill(control_size)) + '"' + " =>\n")
+                for mode, angle in zip(modes_subset, angles_subset):           
                     mode_exit_mapping = []
                     equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(
                         mode,
@@ -508,24 +509,31 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
 
                     #modes_states_list[mode_index].append(transform_in_matrix(mode_exit_mapping, subset_size_x, subset_size_y))
                     modes_states_list.append(mode_exit_mapping)
-
-                    print("Mode exit", mode_exit_mapping)
-                    print("Exit buffer", exit_buffer_unit_mapping)
-
-                str_exit_buffer = str(exit_buffer_unit_mapping)
-                match = False
-                state_mapping_list = list(state_mapping.keys())
-                states_index = 0
+                    #print(exit_buffer_unit_mapping)
+                    
+                #print("Mode exit", index_x, index_y, i, exit_buffer_unit_mapping)
+                if tuple(exit_buffer_unit_mapping) not in state_mapping.keys():
+                    state_mapping[tuple(exit_buffer_unit_mapping)] = []
+                state_mapping[tuple(exit_buffer_unit_mapping)].append((int(index_x/subset_size_x), int(index_y/subset_size_y), i))
                 index += parallel_modes_number
-            print("Next block")
+                #str_exit_buffer = str(exit_buffer_unit_mapping)
+                
+	
                 #gen.generate_angular_mode_mapping(f, modes_states_list)
-            f.write("when others => for i in 0 to 7 loop for j in 0 to 255 loop output(i,j) <= " + '"' + "00000000" + '"' + "; end loop; end loop;\n")
-            f.write("end case;\n")
+            #f.write("when others => for i in 0 to 7 loop for j in 0 to 255 loop output(i,j) <= " + '"' + "00000000" + '"' + "; end loop; end loop;\n")
+            #f.write("end case;\n")
             block_counter += 1
+       
 
-    #print(states_list)
-    #print("States number", max(states_list))
-    #print(states_index)
+    '''t = 0
+    for e,l in zip(state_mapping.keys(),state_mapping.values()):
+        print(len(e),l)
+        t += len(l)    	
+    
+    print(t)
+    print(len(state_mapping))'''
+    gen.generate_angular_mode_mapping(f, state_mapping, int(final_index_x/subset_size_x), int(final_index_y/subset_size_y), len(parallel_modes_list))
+    
     
     f.close()
     

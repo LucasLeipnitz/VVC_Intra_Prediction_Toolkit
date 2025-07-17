@@ -897,12 +897,23 @@ def generate_rom(filter_column_lists, filter_coefficients_normalized):
     print(rom)
 
 
-def generate_angular_mode_mapping(f, modes_states_list):
-    mode_index = 0
-    for modes_state in modes_states_list:
+def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_size):
+    #print(state_mapping.values())
+    for equations, states in zip(state_mapping.keys(), state_mapping.values()):
         output_index = 0
-        for module_output in modes_state:
-            f.write("output(" + str(mode_index) + ", " + str(output_index) + ") <= input(" + str(module_output) + ");\n")
+        mode_index = 0
+        if_string = "\nelsif control ="
+        #print(states) 
+        for state in states:
+        	#print(state)        
+        	if_string += " " + '"' + str(bin(state[0])[2:].zfill(int(mh.log2(size_x)))) + str(bin(state[1])[2:].zfill(int(mh.log2(size_y)))) + str(bin(state[2])[2:].zfill(int(mh.log2(iteration_size)))) + '"' + " or control ="
+        if_string = if_string[:-12]
+        if_string += "then\n"
+        f.write(if_string)
+        for equation in equations:    
+            f.write("\toutput(" + str(mode_index) + ", " + str(output_index) + ") <= input(" + str(equation) + ");\n")
             output_index += 1
+            if output_index == 256:
+            	output_index = 0
+            	mode_index += 1
 
-        mode_index += 1
