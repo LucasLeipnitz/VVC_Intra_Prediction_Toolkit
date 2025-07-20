@@ -372,6 +372,7 @@ def map_index_to_constant(tb, coefficients, equations, equations_constants_set, 
 
             equation_constants = equation_constants[:-3]
             equation_constants_samples = equation_constants_samples[:-3]
+            #print(equation_constants_samples)
             if equation_constants_samples in equations_constants_samples_set:
                 reused_equations += 1
                 line_constants_reuse.append("REUSED: (" + equations_constants_reuse_map[equation_constants_samples] + ")")
@@ -395,12 +396,18 @@ def map_index_to_constant(tb, coefficients, equations, equations_constants_set, 
 
 
 def calculate_equations(mode, angle, nTbW, nTbH, coefficients, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size_x = 0, subset_size_y = 0, refidx = 0, cidx = 0,samples = False, reuse = False, create_table = False):
-    tb = TransformBlock(nTbW, nTbH, mode, angle, refidx, nTbW * 2 + 2, nTbH * 2 + 2, cidx)
+    if nTbW == nTbH:
+        tb = TransformBlock(nTbW, nTbH, mode, angle, refidx, nTbW * 2 + 2, nTbH * 2 + 2, cidx)
+    else:
+        tb = TransformBlock(nTbW, nTbH, mode, angle, refidx, nTbW + nTbH + 1, nTbW + nTbH + 1, cidx)
+
     tb.calculate_pred_values()
     tb.calculate_equations_mode(create_table)
     equations = tb.get_equations(index_x, index_y, subset_size_x, subset_size_y)
 
     columns, equations_constants, equations_constants_samples, equations_constants_reuse, reused_equations, equations_constants_reuse_map = map_index_to_constant(tb, coefficients, equations, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map)
+    #for equation in equations_constants_samples:
+        #print(equation)
 
     equations_list = equations_constants
     if samples:
@@ -897,7 +904,7 @@ def generate_rom(filter_column_lists, filter_coefficients_normalized):
     print(rom)
 
 
-def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_size):
+def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y):
     #print(state_mapping.values())
     for equations, states in zip(state_mapping.keys(), state_mapping.values()):
         output_index = 0
@@ -905,15 +912,145 @@ def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_si
         if_string = "\nelsif control ="
         #print(states) 
         for state in states:
-        	#print(state)        
-        	if_string += " " + '"' + str(bin(state[0])[2:].zfill(int(mh.log2(size_x)))) + str(bin(state[1])[2:].zfill(int(mh.log2(size_y)))) + str(bin(state[2])[2:].zfill(int(mh.log2(iteration_size)))) + '"' + " or control ="
+            if_string += " " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
         if_string = if_string[:-12]
         if_string += "then\n"
         f.write(if_string)
         for equation in equations:    
             f.write("\toutput(" + str(mode_index) + ", " + str(output_index) + ") <= input(" + str(equation) + ");\n")
             output_index += 1
-            if output_index == 256:
-            	output_index = 0
-            	mode_index += 1
+            if output_index ==  block_size_x*block_size_y:
+                output_index = 0
+                mode_index += 1
 
+
+def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y,
+                            final_index_x, final_index_y, subset_size_x, subset_size_y, refidx, samples_on, reuse_on):
+    size = len(parallel_modes_list)
+    iterations = int(len(parallel_modes_list))
+    state_mapping = {}
+    f = open("input_" + str(subset_size_x) + "x" + str(subset_size_y) + "_" + str(nTbW) + "x" + str(nTbH) + ".txt",
+             "w")
+    block_counter = 0
+    for index_x in range(initial_index_x, final_index_x, subset_size_x):
+        for index_y in range(initial_index_y, final_index_y, subset_size_y):
+            equations_constants_set = set()
+            equations_constants_samples_set = set()
+            equations_constants_reuse_map = {}
+            index = 0
+            for i in range(iterations):
+                unit_equation_mapping = {}
+                unit_index = 0
+                parallel_modes_number = parallel_modes_list[i]
+                modes_subset = modes[index:index + parallel_modes_number]
+                angles_subset = angles[index:index + parallel_modes_number]
+                for mode, angle in zip(modes_subset, angles_subset):
+                    mode_exit_mapping = []
+                    equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = calculate_equations(
+                        mode,
+                        angle,
+                        nTbW,
+                        nTbH,
+                        "fc_heuristic",
+                        equations_constants_set,
+                        equations_constants_samples_set,
+                        equations_constants_reuse_map,
+                        index_x=index_x,
+                        index_y=index_y,
+                        subset_size_x=subset_size_x,
+                        subset_size_y=subset_size_y,
+                        refidx=refidx,
+                        samples=samples_on,
+                        reuse=reuse_on,
+                        create_table=False)
+
+                    for equations_column in equations:
+                        for equation in equations_column:
+                            if equation not in unit_equation_mapping.keys():
+                                unit_equation_mapping[equation] = unit_index
+                                unit_index += 1
+
+                            mode_exit_mapping.append(unit_equation_mapping[equation])
+
+
+                unit_equation_mapping, control_mapping = transform_pixel_to_sample_array(unit_equation_mapping)
+                #print(index_x, index_y, iterations)
+                #for unit_equation in unit_equation_mapping:
+                    #print(unit_equation)
+
+                if tuple(unit_equation_mapping) not in state_mapping.keys():
+                    state_mapping[tuple(unit_equation_mapping)] = []
+                state_mapping[tuple(unit_equation_mapping)].append(
+                    (int(index_x / subset_size_x), int(index_y / subset_size_y), i))
+                index += parallel_modes_number
+
+            block_counter += 1
+
+    '''for values in state_mapping.values():
+        print(values)'''
+
+
+    '''t = 0
+    for e,l in zip(state_mapping.keys(),state_mapping.values()):
+        print(len(e),l)
+        t += len(l)    	
+
+    print(t)
+    print(len(state_mapping))'''
+    generate_angular_input_mapping(f, state_mapping, int(final_index_x / subset_size_x),
+                                      int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
+                                      subset_size_y)
+
+    f.close()
+
+def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y):
+    #print(state_mapping.values())
+    for equations, states in zip(state_mapping.keys(), state_mapping.values()):
+        ref_index = 0
+        input_index = 0
+        if_string = "\nelsif control ="
+        #print(states)
+        for state in states:
+            if_string += " " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
+        if_string = if_string[:-12]
+        if_string += "then\n"
+        f.write(if_string)
+        for equation in equations:
+            f.write("\tinput(" + str(input_index) + ")(" + str(ref_index) + ") <= " + str(equation) + ";\n")
+            ref_index += 1
+            if ref_index ==  4:
+                ref_index = 0
+                input_index += 1
+
+def transform_pixel_to_sample_array(unit_equation_mapping):
+    top_samples = []
+    left_samples = []
+    new_unit_equation_mapping = []
+    constants_mapping = []
+    for equation in unit_equation_mapping:
+        constants = []
+        #print(equation)
+        for k in range(4):
+            constant, index_x, index_y = re.findall(r'-?\d+', equation.split('+')[
+                k])  # get p[index] and ref from string containing and put it in two separately variables
+            if int(index_x) == -1 and int(index_y) == -1:
+                new_unit_equation_mapping.append("top_samples(" + str(0) + ")")
+            elif int(index_x) == -1:
+                new_unit_equation_mapping.append("left_samples(" + str(index_y) + ")")
+            elif int(index_y) == -1:
+                new_unit_equation_mapping.append("top_samples(" + str(int(index_x) + 1) + ")")
+            else:
+                throw_error("Undefined sample")
+            constants.append(constant)
+
+        constants_mapping.append(constants)
+
+    return new_unit_equation_mapping, constants_mapping
+
+def generate_samples_buffer(samples_size):
+    pass
+    #for i in range(samples_size):
+
+
+
+    #return top_samples, left_samples

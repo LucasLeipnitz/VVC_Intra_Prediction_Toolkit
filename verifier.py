@@ -1,4 +1,6 @@
 import re
+import numpy as np
+import random as rm
 path_tests = "./output/tests/"
 
 def map_pixel_to_reference(input_pixels, mode_tb, lower_limit, upper_limit):
