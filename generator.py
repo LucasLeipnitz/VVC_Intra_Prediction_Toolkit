@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import math as mh
 import re
+import random as rm
 from collections import defaultdict
 
 from numpy.f2py.auxfuncs import throw_error
@@ -471,29 +472,6 @@ def generate_sorted_equations_set(equations_set, print_set):
 
     return sorted_set
 
-def generate_control_sequence(sorted_equations_set, print_sequence):
-    control_sequence = ["fetch", "fetch", "fetch", "fetch"]
-    first_equation = sorted_equations_set[0]
-    previous_value = get_reference_number(first_equation)
-
-    for equation in sorted_equations_set[1:]:
-        value = get_reference_number(equation)
-        if value == previous_value:
-            control_sequence.append("stall-calculate")
-        elif value < previous_value:
-            control_sequence.append("fetch-calculate")
-            previous_value = value
-        else:
-            raise Exception("Equation set not sorted")
-
-    control_sequence.append("calculate")
-
-    if print_sequence:
-        i = -4
-        for instruction in control_sequence:
-            i += 1
-            print(i, instruction)
-
 
 def transform_coefficients(n_average_fc, n_average_fg, print_table, print_values_c):
     for column in range(0, 4):
@@ -925,11 +903,13 @@ def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_si
 
 
 def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y,
-                            final_index_x, final_index_y, subset_size_x, subset_size_y, refidx, samples_on, reuse_on):
+                            final_index_x, final_index_y, subset_size_x, subset_size_y, refidx, samples_on, reuse_on, coefficients_table):
     size = len(parallel_modes_list)
     iterations = int(len(parallel_modes_list))
     state_mapping = {}
     f = open("input_" + str(subset_size_x) + "x" + str(subset_size_y) + "_" + str(nTbW) + "x" + str(nTbH) + ".txt",
+             "w")
+    c = open("control_" + str(subset_size_x) + "x" + str(subset_size_y) + "_" + str(nTbW) + "x" + str(nTbH) + ".txt",
              "w")
     block_counter = 0
     for index_x in range(initial_index_x, final_index_x, subset_size_x):
@@ -977,6 +957,9 @@ def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initia
                 #print(index_x, index_y, iterations)
                 #for unit_equation in unit_equation_mapping:
                     #print(unit_equation)
+                control_sequence = generate_control_sequence(control_mapping, coefficients_table)
+                generate_control_sequence_file(c, control_sequence, "fc", (int(index_x/subset_size_x), int(index_y/subset_size_y), i) ,int(final_index_x / subset_size_x),
+                                      int(final_index_y / subset_size_y), len(parallel_modes_list))
 
                 if tuple(unit_equation_mapping) not in state_mapping.keys():
                     state_mapping[tuple(unit_equation_mapping)] = []
@@ -1002,6 +985,7 @@ def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initia
                                       subset_size_y)
 
     f.close()
+    c.close()
 
 def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y):
     #print(state_mapping.values())
@@ -1047,10 +1031,66 @@ def transform_pixel_to_sample_array(unit_equation_mapping):
 
     return new_unit_equation_mapping, constants_mapping
 
-def generate_samples_buffer(samples_size):
-    pass
-    #for i in range(samples_size):
+def generate_control_sequence(control_mapping, coefficients):
+    #print(control_mapping)
+    control_sequence = []
+    for line_index in range(len(coefficients[0])):
+        for state in control_mapping:
+            if str(state[0]) == str(coefficients[0][line_index]) and str(state[1]) == str(coefficients[1][line_index]) and str(state[2]) == str(coefficients[2][line_index]) and str(state[3]) == str(coefficients[3][line_index]):
+                control_sequence.append(line_index)
+
+    return control_sequence
 
 
+def generate_control_sequence_file(c, control_sequence, coefficients_string, state, size_x, size_y, iteration_size):
+    """DANGER ONLY WORKING FOR N16"""
+    if coefficients_string == "fc":
+        coefficient_bit = 0
+    else:
+        coefficient_bit = 1
 
-    #return top_samples, left_samples
+    c.write(
+        "\tmapping_control <= " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
+        bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(
+        bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + ";\n")
+    c.write(
+        "\tinput_mapping_control <= " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
+            bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(
+            bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + ";\n")
+    for control_bits, unit_index in zip(control_sequence, range(len(control_sequence))):
+        c.write("\tunit_control(" + str(unit_index) + ") <= " + '"' + str(coefficient_bit) + str(control_bits) + '"' + ";\n")
+
+    c.write("\twait for 5 ns;\n")
+
+
+def random_generate_input(f, angle, base, size):
+    input = {}
+    for n in range(base, base + size):
+        iIdx = ((n + 1) * angle) >> 5
+        new_base = iIdx
+        for i in range(0, 4):
+            index = 0 + iIdx + i
+            if (index not in input):
+                input[index] = rm.randint(0, 255)
+                f.write("ref_" + str(index) + " : " + str(input[index]) + "\n")
+
+    return input, new_base
+
+
+def generate_samples_buffer(seed, samples_size_top, samples_size_left):
+    rm.seed(seed)  # set seed so that input has the same values for all tests
+    f = open("random_inputs.txt","w")
+    top_samples = []
+    left_samples = []
+    for i in range(samples_size_top):
+        input_value = rm.randint(0, 255)
+        top_samples.append(input_value)
+        f.write("top_samples(" + str(i) + ") <= std_logic_vector(to_unsigned(" + str(input_value) + ",8));\n")
+
+    for i in range(samples_size_left):
+        input_value = rm.randint(0, 255)
+        left_samples.append(input_value)
+        f.write("left_samples(" + str(i) + ") <= std_logic_vector(to_unsigned(" + str(input_value) + ",8));\n")
+
+    f.close()
+    return top_samples, left_samples
