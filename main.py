@@ -90,22 +90,43 @@ def main(modes, control = -1):
             print(number_of_blocks)
         case 8:
             top_samples, left_samples = gen.generate_samples_buffer(196, 19, 18)
-            print(top_samples)
-            print(left_samples)
-            tb = TransformBlock(4, 4, modes[0], angles[0], 0, 4 * 2 + 2, 4 * 2 + 2, 0)
-            tb.calculate_pred_values()
             f = open("output_results.txt", "r")
-            pred_result = ver.generate_output(f, tb, angles[0], 0, 0, 4, 4, top_samples, left_samples, "fc_heuristic")
-            print(pred_result)
+            iterations = int(len(parallel_modes_list))
+            pred_result_matrix = []
+            index = 0
+            for i in range(iterations):
+                parallel_modes_number = parallel_modes_list[i]
+                modes_subset = modes[index:index + parallel_modes_number]
+                angles_subset = angles[index:index + parallel_modes_number]
+                pred_result = []
+                for mode, angle in zip(modes_subset, angles_subset):
+                	tb = TransformBlock(4, 4, mode, angle, 0, 4 * 2 + 2, 4 * 2 + 2, 0)
+                	tb.calculate_pred_values()
+                	pred_result += ver.generate_output(f, tb, angle, 0, 0, 4, 4, top_samples, left_samples, "fc_heuristic")
+                	result_index = 0
+                pred_result_matrix.append(pred_result)
+                #print(pred_result)
+                index += parallel_modes_number
+
+            #print(pred_result_matrix)	    
+            matrix_index = -1
+            line_index = 0
             result_index = 0
             for line in f:
-                if line != "#\n" and line != "UUUUUUUU\n":
-                    if int(line, 2) == pred_result[result_index]:
-                        print("Passed")
-                    else:
-                        print("Not passed: ", int(line, 2), pred_result[result_index])
+                line_index += 1            
+                if line != "#\n" and result_index < len(pred_result_matrix[matrix_index]):					
+                	if int(line, 2) == int(pred_result_matrix[matrix_index][result_index]):
+                	    print("Passed")
+                	    x = 1
+                	else:
+                	    x = 2              	    
+                	    print("Not passed: ", int(line, 2), int(pred_result[result_index]), line_index, matrix_index)
 
-                    result_index += 1
+                	result_index += 1
+                else:
+                	result_index = 0
+                	matrix_index += 1	
+				    					    				
         case _:
             print("Select a value for control between 0 and 7")
     
