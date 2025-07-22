@@ -952,7 +952,8 @@ def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initia
 
                             mode_exit_mapping.append(unit_equation_mapping[equation])
 
-
+                #for unit_equation in unit_equation_mapping:
+                    #print(unit_equation)
                 unit_equation_mapping, control_mapping = transform_pixel_to_sample_array(unit_equation_mapping)
                 #print(index_x, index_y, iterations)
                 #for unit_equation in unit_equation_mapping:
@@ -1061,20 +1062,6 @@ def generate_control_sequence_file(c, control_sequence, coefficients_string, sta
         c.write("\tunit_control(" + str(unit_index) + ") <= " + '"' + str(coefficient_bit) + str(control_bits) + '"' + ";\n")
 
     c.write("\twait for 5 ns;\n")
-
-
-def random_generate_input(f, angle, base, size):
-    input = {}
-    for n in range(base, base + size):
-        iIdx = ((n + 1) * angle) >> 5
-        new_base = iIdx
-        for i in range(0, 4):
-            index = 0 + iIdx + i
-            if (index not in input):
-                input[index] = rm.randint(0, 255)
-                f.write("ref_" + str(index) + " : " + str(input[index]) + "\n")
-
-    return input, new_base
 
 
 def generate_samples_buffer(seed, samples_size_top, samples_size_left):

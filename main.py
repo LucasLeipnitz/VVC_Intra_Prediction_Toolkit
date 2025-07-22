@@ -5,7 +5,7 @@ from transform_block import TransformBlock
 
 path_input_modes = "./input/modes/"
 
-option = 2
+option = 8
 input_modes = gen.all_modes
 #input_modes = [34,35,37]
 #input_modes = [2,3,4,5,6,7]
@@ -65,7 +65,6 @@ def main(modes, control = -1):
             #sim.simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             gen.angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on, coefficients_table = filter_column_list)
-            gen.generate_samples_buffer(196, 19, 18)
         case 3:
             gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
         case 4:
@@ -83,37 +82,30 @@ def main(modes, control = -1):
         case 6:
             gen.generate_rom(filter_column_list, filter_coefficients_set)
         case 7:
-            if assert_equals:
-                test_input = ver.automated_tests(196, -66, 38)
-                ver.assert_equals_planar(test_input, 32)
-                ver.assert_equals_dc(test_input, 32, 135)
-                for i in range (0,16):
-                    ver.assert_equals_angular(test_input, modes[i], angles[i], block_size, -66, 38)
-            else:
-                ver.automated_tests(196, -66, 38)
-        case 8:
-                #ver.generate_programmable_blocks_n8(0, [[4,8],[2,1],[-1,1],[0,1],[-1,2]],filter_column_list_normalized)
-                #print("#####################################")
-                #ver.generate_programmable_blocks_n8(1, [[1,8,32,64], [1,2], [4,16], [-1, 1], [-1, 1], [1, 2]],filter_column_list_normalized)
-                #print("#####################################")
-                '''ver.generate_programmable_blocks_n8(2, [[1,4,32,48], [4,16], [-1, 1], [0,1], [-1,1], [0,1], [0,1]],
-                                                  filter_column_list_normalized)
-                print("#####################################")'''
-                ver.generate_programmable_blocks_n8(3, [[16], [4,8],
-                                                      [1,2], [-1, 1], [0, 1], [-1, 1], [0, 1]],
-                                                  filter_column_list_normalized)
-
-        case 9:
-            ver.verify_programmable_blocks_n8(0, [1,2,6,92,67,14,6],[-2, -10, -18, 1288, 670, 84, 12],
-                                              ["00000", "01100", "01000", "11001", "01101", "01001", "00011"], [[4,8],[2,1],[-1,1],[0,1],[-1,2]])
-            print("#####################################")
-        case 10:
             leaf_mapping = {}
             sim.QT_split(64,64, leaf_mapping)
             print(leaf_mapping)
             print(16,16)
             number_of_blocks = sim.MTT_split(64, 64, (0,0))
             print(number_of_blocks)
+        case 8:
+            top_samples, left_samples = gen.generate_samples_buffer(196, 19, 18)
+            print(top_samples)
+            print(left_samples)
+            tb = TransformBlock(4, 4, modes[0], angles[0], 0, 4 * 2 + 2, 4 * 2 + 2, 0)
+            tb.calculate_pred_values()
+            f = open("output_results.txt", "r")
+            pred_result = ver.generate_output(f, tb, angles[0], 0, 0, 4, 4, top_samples, left_samples, "fc_heuristic")
+            print(pred_result)
+            result_index = 0
+            for line in f:
+                if line != "#\n" and line != "UUUUUUUU\n":
+                    if int(line, 2) == pred_result[result_index]:
+                        print("Passed")
+                    else:
+                        print("Not passed: ", int(line, 2), pred_result[result_index])
+
+                    result_index += 1
         case _:
             print("Select a value for control between 0 and 7")
     
