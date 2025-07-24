@@ -280,7 +280,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
                     print(equation)'''
                 #size = len(equations_constants_samples_set - global_samples_buffer)
                 size = len(equations_constants_samples_set - buffer_equations)
-                #print("Total N samples to be predicted:", len(equations_constants_samples_set))
+                print("Total N samples to be predicted:", len(equations_constants_samples_set))
                 #print("N samples to be predicted (with cache): ", size)
                 #print("Cache size", buffer_size)
                 buffer_size_list.append(buffer_size)

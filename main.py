@@ -59,7 +59,7 @@ def main(modes, control = -1):
                 equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(mode, angle, nTbW, nTbH, "fc_heuristic", equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size_x = subset_size_x, subset_size_y = subset_size_y, refidx = 0, cidx = 0, samples = samples_on, reuse = reuse_on, create_table = True)
 
         case 2:
-            sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
+            #sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
             #sim.simulate_number_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
@@ -90,6 +90,8 @@ def main(modes, control = -1):
             print(number_of_blocks)
         case 8:
             top_samples, left_samples = gen.generate_samples_buffer(196, 19, 18)
+            print(top_samples)
+            print(left_samples)
             f = open("output_results.txt", "r")
             iterations = int(len(parallel_modes_list))
             pred_result_matrix = []
@@ -100,10 +102,10 @@ def main(modes, control = -1):
                 angles_subset = angles[index:index + parallel_modes_number]
                 pred_result = []
                 for mode, angle in zip(modes_subset, angles_subset):
-                	tb = TransformBlock(4, 4, mode, angle, 0, 4 * 2 + 2, 4 * 2 + 2, 0)
-                	tb.calculate_pred_values()
-                	pred_result += ver.generate_output(f, tb, angle, 0, 0, 4, 4, top_samples, left_samples, "fc_heuristic")
-                	result_index = 0
+                    tb = TransformBlock(4, 4, mode, angle, 0, 4 * 2 + 2, 4 * 2 + 2, 0)
+                    tb.calculate_pred_values()
+                    pred_result += ver.generate_output(f, tb, angle, 0, 0, 4, 4, top_samples, left_samples, "fc_heuristic")
+                    result_index = 0
                 pred_result_matrix.append(pred_result)
                 #print(pred_result)
                 index += parallel_modes_number
@@ -112,20 +114,23 @@ def main(modes, control = -1):
             matrix_index = -1
             line_index = 0
             result_index = 0
+            mode_index = 0
             for line in f:
                 line_index += 1            
                 if line != "#\n" and result_index < len(pred_result_matrix[matrix_index]):					
-                	if int(line, 2) == int(pred_result_matrix[matrix_index][result_index]):
-                	    print("Passed")
-                	    x = 1
-                	else:
-                	    x = 2              	    
-                	    print("Not passed: ", int(line, 2), int(pred_result[result_index]), line_index, matrix_index)
+                    if int(line, 2) == int(pred_result_matrix[matrix_index][result_index]):
+                        print("Passed", int(line, 2), int(pred_result_matrix[matrix_index][result_index]), line_index, matrix_index, modes[mode_index])
+                    else:
+                        print("Not passed: ", int(line, 2), int(pred_result_matrix[matrix_index][result_index]), line_index, matrix_index, modes[mode_index])
 
-                	result_index += 1
+                    result_index += 1
+                    if result_index%16 == 0:
+                        mode_index += 1
+
                 else:
-                	result_index = 0
-                	matrix_index += 1	
+                    result_index = 0
+                    matrix_index += 1
+                    print("Matrix index", matrix_index)
 				    					    				
         case _:
             print("Select a value for control between 0 and 7")

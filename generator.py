@@ -417,6 +417,7 @@ def calculate_equations(mode, angle, nTbW, nTbH, coefficients, equations_constan
     reuse_string = ""
     if reuse:
         reuse_string += "reuse_"
+        equations_list = equations_constants_reuse
 
     if create_table:
         df = pd.DataFrame(list(zip(*equations_list)), columns=columns)
@@ -952,12 +953,8 @@ def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initia
 
                             mode_exit_mapping.append(unit_equation_mapping[equation])
 
-                #for unit_equation in unit_equation_mapping:
-                    #print(unit_equation)
+
                 unit_equation_mapping, control_mapping = transform_pixel_to_sample_array(unit_equation_mapping)
-                #print(index_x, index_y, iterations)
-                #for unit_equation in unit_equation_mapping:
-                    #print(unit_equation)
                 control_sequence = generate_control_sequence(control_mapping, coefficients_table)
                 generate_control_sequence_file(c, control_sequence, "fc", (int(index_x/subset_size_x), int(index_y/subset_size_y), i) ,int(final_index_x / subset_size_x),
                                       int(final_index_y / subset_size_y), len(parallel_modes_list))
@@ -970,17 +967,7 @@ def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initia
 
             block_counter += 1
 
-    '''for values in state_mapping.values():
-        print(values)'''
-
-
-    '''t = 0
-    for e,l in zip(state_mapping.keys(),state_mapping.values()):
-        print(len(e),l)
-        t += len(l)    	
-
-    print(t)
-    print(len(state_mapping))'''
+    #print(state_mapping)
     generate_angular_input_mapping(f, state_mapping, int(final_index_x / subset_size_x),
                                       int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
                                       subset_size_y)
@@ -1035,8 +1022,8 @@ def transform_pixel_to_sample_array(unit_equation_mapping):
 def generate_control_sequence(control_mapping, coefficients):
     #print(control_mapping)
     control_sequence = []
-    for line_index in range(len(coefficients[0])):
-        for state in control_mapping:
+    for state in control_mapping:
+        for line_index in range(len(coefficients[0])):
             if str(state[0]) == str(coefficients[0][line_index]) and str(state[1]) == str(coefficients[1][line_index]) and str(state[2]) == str(coefficients[2][line_index]) and str(state[3]) == str(coefficients[3][line_index]):
                 control_sequence.append(line_index)
 

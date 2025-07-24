@@ -138,11 +138,10 @@ def random_generate_input(f, mode, angle, base, size):
 
 def generate_output(f, tb, angle, initial_index_x, initial_index_y, final_index_x, final_index_y, top_samples, left_samples, filter_table):
     pred_result = []
-    for x in range(initial_index_x, final_index_x):
-        for y in range(initial_index_y, final_index_y):
+    for y in range(initial_index_y, final_index_y):
+        for x in range(initial_index_x, final_index_x):
             iIdx = ((y + 1) * angle) >> 5
             iFact = ((y + 1) * angle) & 31
-            #tb.
             pred_result.append(calculate_pred_y(tb, x, iIdx, iFact, top_samples, left_samples, filter_table))
             # print(str(calculate_pred_y(input,x_base,iIdx,iFact, filterFlag)) + "\n")
 
