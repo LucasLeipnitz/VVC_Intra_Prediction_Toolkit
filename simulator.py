@@ -540,33 +540,90 @@ def simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, init
     
     
     f.close()
-    
-def simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, number_of_units, refidx, samples_on, reuse_on):
-    nTbW = 32
-    nTbH = 32
-    subset_size = 4
-    total_number_of_units = 0
-    
-    for initial_index_x in range(0, nTbW, 16):
-        for initial_index_y in range(0, nTbH, 16):
-            total_number_of_units += simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1)
-            simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, refidx, samples_on, reuse_on)
 
-    print(total_number_of_units)
-    
-    
-def simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, number_of_units, refidx, samples_on, reuse_on):
-    nTbW = 64
-    nTbH = 64
-    subset_size = 4
-    total_number_of_units = 0
 
-    for initial_index_x in range(0, nTbW, 16):
-        for initial_index_y in range(0, nTbH, 16):
-            total_number_of_units += simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1)
-            simulate_architecture(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, initial_index_x + 16, initial_index_y + 16, subset_size, refidx, samples_on, reuse_on)
+def simulate_4x4_n_blocks(modes, angles, parallel_modes_list, coefficients_table):
+    index_x = index_y = 0
+    nTbW = nTbH = final_index_x = final_index_y = 4
+    simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y, final_index_x, final_index_y, 0)
 
-    print(total_number_of_units)
+    nTbW = nTbH = 8
+    index_x = 0
+    index_y = 4
+    final_index_x = 4
+    final_index_y = 8
+    simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y, final_index_x, final_index_y, 1)
+
+    gen.compare_files("output_4x4_4x4.txt", "output_4x4_8x8_1.txt", "output_4x4_8x8_1_merged.txt")
+
+    index_x = 4
+    index_y = 0
+    final_index_x = 8
+    final_index_y = 4
+    simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y,
+                        final_index_x, final_index_y, 2)
+
+    gen.compare_files("output_4x4_4x4.txt", "output_4x4_8x8_2.txt", "output_4x4_8x8_2_merged.txt")
+
+    index_x = 4
+    index_y = 4
+    final_index_x = 8
+    final_index_y = 8
+    simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y,
+                        final_index_x, final_index_y, 3)
+
+    gen.compare_files("output_4x4_4x4.txt", "output_4x4_8x8_3.txt", "output_4x4_8x8_3_merged.txt")
+
+    index_x = 0
+    index_y = 0
+    final_index_x = 8
+    final_index_y = 8
+    simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y,
+                        final_index_x, final_index_y, 4)
+
+
+    gen.compare_files("output_4x4_4x4.txt", "output_4x4_8x8_4.txt", "output_4x4_8x8_4_merged.txt")
+
+
+def simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y, final_index_x, final_index_y, n):
+    size = len(parallel_modes_list)
+    control_size = int(mh.log2(size))
+    iterations = int(len(parallel_modes_list))
+    output_state_mapping = {}
+    input_state_mapping = {}
+
+    if nTbW == nTbH == 4:
+        n_str = ""
+    else:
+        n_str = "_" + str(n)
+
+    input_file = open("input_4x4_" + str(nTbW) + 'x' + str(nTbH) + n_str + ".txt", "w")
+    output_file = open("output_4x4_" + str(nTbW) + 'x' + str(nTbH) + n_str + ".txt","w")
+    control_file = open("control_4x4_" + str(nTbW) + 'x' + str(nTbH) + n_str + ".txt","w")
+    subset_size_x = subset_size_y = 4
+
+    output_state_mapping, input_state_mapping, control_list = gen.generate_mapping_states(output_state_mapping, input_state_mapping, parallel_modes_list, modes, angles, nTbW, nTbH, index_x, index_y,
+                            subset_size_x, subset_size_y, final_index_x, final_index_y, iterations, coefficients_table)
+
+    gen.generate_angular_mode_mapping(output_file, output_state_mapping, int(final_index_x / subset_size_x),
+                                      int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
+                                      subset_size_y, True)
+
+    gen.generate_angular_input_mapping(input_file, input_state_mapping, int(final_index_x / subset_size_x),
+                                   int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
+                                   subset_size_y)
+
+    for control_sequence, i in zip(control_list, range(len(control_list))):
+        gen.generate_control_sequence_file(control_file, control_sequence, "fc",
+                                       (int(index_x / subset_size_x), int(index_y / subset_size_y), i),
+                                       int(final_index_x / subset_size_x),
+                                       int(final_index_y / subset_size_y), len(parallel_modes_list))
+
+    input_file.close()
+    output_file.close()
+    control_file.close()
+
+
 
 def simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type = -1, refidx = 0, cidx = 0):
     iterations = int(len(parallel_modes_list))

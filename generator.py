@@ -883,7 +883,7 @@ def generate_rom(filter_column_lists, filter_coefficients_normalized):
     print(rom)
 
 
-def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y):
+def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y, iteration_only = False):
     #print(state_mapping.values())
     for equations, states in zip(state_mapping.keys(), state_mapping.values()):
         output_index = 0
@@ -891,7 +891,12 @@ def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_si
         if_string = "\nelsif control ="
         #print(states) 
         for state in states:
-            if_string += " " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
+            if not iteration_only:
+                if_string += " " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
+                    bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(
+                    bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
+            else:
+                if_string += " " + '"' + str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
         if_string = if_string[:-12]
         if_string += "then\n"
         f.write(if_string)
@@ -975,7 +980,7 @@ def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initia
     f.close()
     c.close()
 
-def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y):
+def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y, iteration_only = False):
     #print(state_mapping.values())
     for equations, states in zip(state_mapping.keys(), state_mapping.values()):
         ref_index = 0
@@ -983,7 +988,13 @@ def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_s
         if_string = "\nelsif control ="
         #print(states)
         for state in states:
-            if_string += " " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
+            if not iteration_only:
+                if_string += " " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
+                    bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(
+                    bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
+            else:
+                if_string += " " + '"' + str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
+
         if_string = if_string[:-12]
         if_string += "then\n"
         f.write(if_string)
@@ -1030,7 +1041,7 @@ def generate_control_sequence(control_mapping, coefficients):
     return control_sequence
 
 
-def generate_control_sequence_file(c, control_sequence, coefficients_string, state, size_x, size_y, iteration_size):
+def generate_control_sequence_file(c, control_sequence, coefficients_string, state, size_x, size_y, iteration_size, block = 0):
     """DANGER ONLY WORKING FOR N16"""
     if coefficients_string == "fc":
         coefficient_bit = 0
@@ -1038,15 +1049,19 @@ def generate_control_sequence_file(c, control_sequence, coefficients_string, sta
         coefficient_bit = 1
 
     c.write(
-        "\tmapping_control <= " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
+        "\toutput_control <= " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
         bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(
         bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + ";\n")
     c.write(
-        "\tinput_mapping_control <= " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
+        "\tinput_control <= " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
             bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(
             bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + ";\n")
     for control_bits, unit_index in zip(control_sequence, range(len(control_sequence))):
-        c.write("\tunit_control(" + str(unit_index) + ") <= " + '"' + str(coefficient_bit) + str(control_bits) + '"' + ";\n")
+        if block > 0:
+            c.write("\tcontrol_block_" + str(block) + "(" + str(unit_index) + ") <= " + '"' + str(coefficient_bit) + str(
+                control_bits) + '"' + ";\n")
+        else:
+            c.write("\tunit_control(" + str(unit_index) + ") <= " + '"' + str(coefficient_bit) + str(control_bits) + '"' + ";\n")
 
     c.write("\twait for 5 ns;\n")
 
@@ -1068,3 +1083,125 @@ def generate_samples_buffer(seed, samples_size_top, samples_size_left):
 
     f.close()
     return top_samples, left_samples
+
+
+def generate_mapping_states(output_state_mapping, input_state_mapping, parallel_modes_list, modes, angles, nTbW, nTbH, index_x, index_y, subset_size_x, subset_size_y, final_index_x, final_index_y,iterations, coefficients_table):
+    equations_constants_set = set()
+    equations_constants_samples_set = set()
+    equations_constants_reuse_map = {}
+    control_list = []
+    index = 0
+    for i in range(iterations):
+        unit_equation_mapping = {}
+        unit_index = 0
+        parallel_modes_number = parallel_modes_list[i]
+        modes_subset = modes[index:index + parallel_modes_number]
+        angles_subset = angles[index:index + parallel_modes_number]
+        modes_states_list = []
+        exit_buffer_unit_mapping = []
+        for mode, angle in zip(modes_subset, angles_subset):
+            mode_exit_mapping = []
+            equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = calculate_equations(
+                mode,
+                angle,
+                nTbW,
+                nTbH,
+                "fc_heuristic",
+                equations_constants_set,
+                equations_constants_samples_set,
+                equations_constants_reuse_map,
+                index_x=index_x,
+                index_y=index_y,
+                subset_size_x=subset_size_x,
+                subset_size_y=subset_size_y,
+                refidx= 0,
+                samples= True,
+                reuse= False,
+                create_table=False)
+
+            for equations_column in equations:
+                for equation in equations_column:
+                    if equation not in unit_equation_mapping.keys():
+                        unit_equation_mapping[equation] = unit_index
+                        unit_index += 1
+
+                    mode_exit_mapping.append(unit_equation_mapping[equation])
+                    exit_buffer_unit_mapping.append(unit_equation_mapping[equation])
+
+            modes_states_list.append(mode_exit_mapping)
+
+        unit_equation_mapping, control_mapping = transform_pixel_to_sample_array(unit_equation_mapping)
+        control_sequence = generate_control_sequence(control_mapping, coefficients_table)
+        control_list.append(control_sequence)
+
+        if tuple(exit_buffer_unit_mapping) not in output_state_mapping.keys():
+            output_state_mapping[tuple(exit_buffer_unit_mapping)] = []
+        output_state_mapping[tuple(exit_buffer_unit_mapping)].append(
+            (int(index_x / subset_size_x), int(index_y / subset_size_y), i))
+
+        if tuple(unit_equation_mapping) not in input_state_mapping.keys():
+            input_state_mapping[tuple(unit_equation_mapping)] = []
+        input_state_mapping[tuple(unit_equation_mapping)].append(
+            (int(index_x / subset_size_x), int(index_y / subset_size_y), i))
+        index += parallel_modes_number
+
+    return output_state_mapping, input_state_mapping, control_list
+
+
+#GERADO POR DEEPSEEK
+def compare_files(file1_path, file2_path, output_path):
+    try:
+        with open(file1_path, 'r') as file1, open(file2_path, 'r') as file2:
+            lines1 = file1.readlines()
+            lines2 = file2.readlines()
+    except FileNotFoundError as e:
+        print(f"Erro ao abrir arquivos: {e}")
+        return
+
+    max_lines = max(len(lines1), len(lines2))
+    output_lines = []
+    version1_lines = []
+    version2_lines = []
+    in_difference_block = False
+
+    for i in range(max_lines):
+        line1 = lines1[i].rstrip() if i < len(lines1) else None
+        line2 = lines2[i].rstrip() if i < len(lines2) else None
+
+        if line1 == line2:
+            # Se encontramos linha igual, finaliza qualquer bloco de diferença existente
+            if in_difference_block:
+                output_lines.append("#if VERSION1\n")
+                output_lines.extend(version1_lines)
+                output_lines.append("#else  // VERSION2\n")
+                output_lines.extend(version2_lines)
+                output_lines.append("#endif\n")
+                version1_lines = []
+                version2_lines = []
+                in_difference_block = False
+            output_lines.append(f"{line1}\n" if line1 is not None else "\n")
+        else:
+            # Começa novo bloco de diferença se não estivermos em um
+            if not in_difference_block:
+                in_difference_block = True
+
+            # Armazena as linhas diferentes
+            if line1 is not None:
+                version1_lines.append(f"{line1}\n")
+            if line2 is not None:
+                version2_lines.append(f"{line2}\n")
+
+    # Processa qualquer bloco de diferença pendente no final do arquivo
+    if in_difference_block:
+        output_lines.append("#if VERSION1\n")
+        output_lines.extend(version1_lines)
+        output_lines.append("#else  // VERSION2\n")
+        output_lines.extend(version2_lines)
+        output_lines.append("#endif\n")
+
+    try:
+        with open(output_path, 'w') as output_file:
+            output_file.writelines(output_lines)
+        print(f"Arquivo de saída gerado com sucesso: {output_path}")
+    except IOError as e:
+        print(f"Erro ao escrever arquivo de saída: {e}")

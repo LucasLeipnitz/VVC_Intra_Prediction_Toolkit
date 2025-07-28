@@ -5,7 +5,7 @@ from transform_block import TransformBlock
 
 path_input_modes = "./input/modes/"
 
-option = 8
+option = 2
 input_modes = gen.all_modes
 #input_modes = [34,35,37]
 #input_modes = [2,3,4,5,6,7]
@@ -64,7 +64,8 @@ def main(modes, control = -1):
             #sim.simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
-            gen.angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on, coefficients_table = filter_column_list)
+            #gen.angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 8, 8, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on, coefficients_table = filter_column_list)
+            sim.simulate_4x4_n_blocks(modes, angles, parallel_modes_list, coefficients_table = filter_column_list)
         case 3:
             gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
         case 4:
@@ -117,20 +118,20 @@ def main(modes, control = -1):
             mode_index = 0
             for line in f:
                 line_index += 1            
-                if line != "#\n" and result_index < len(pred_result_matrix[matrix_index]):					
-                    if int(line, 2) == int(pred_result_matrix[matrix_index][result_index]):
-                        print("Passed", int(line, 2), int(pred_result_matrix[matrix_index][result_index]), line_index, matrix_index, modes[mode_index])
-                    else:
-                        print("Not passed: ", int(line, 2), int(pred_result_matrix[matrix_index][result_index]), line_index, matrix_index, modes[mode_index])
-
-                    result_index += 1
-                    if result_index%16 == 0:
-                        mode_index += 1
-
-                else:
+                if line == "#\n":
                     result_index = 0
                     matrix_index += 1
                     print("Matrix index", matrix_index)
+                else:
+                    if result_index < len(pred_result_matrix[matrix_index]):
+                        if int(line, 2) == int(pred_result_matrix[matrix_index][result_index]):
+                            print("Passed", int(line, 2), int(pred_result_matrix[matrix_index][result_index]), line_index, matrix_index, modes[mode_index])
+                        else:
+                            print("Not passed: ", int(line, 2), int(pred_result_matrix[matrix_index][result_index]), line_index, matrix_index, modes[mode_index])
+
+                        result_index += 1
+                        if result_index%16 == 0:
+                            mode_index += 1
 				    					    				
         case _:
             print("Select a value for control between 0 and 7")
