@@ -980,7 +980,7 @@ def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initia
     f.close()
     c.close()
 
-def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y, iteration_only = False):
+def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_size, block_size_x, block_size_y, iteration_only = False, dontcare_fill = False, dont_care_fill_number = 0):
     #print(state_mapping.values())
     for equations, states in zip(state_mapping.keys(), state_mapping.values()):
         ref_index = 0
@@ -1004,6 +1004,14 @@ def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_s
             if ref_index ==  4:
                 ref_index = 0
                 input_index += 1
+
+        if dontcare_fill:
+            while input_index < dont_care_fill_number:
+                f.write("\tinput(" + str(input_index) + ")(" + str(ref_index) + ") <= " + '"' + str("--------") + '"' + ";\n")
+                ref_index += 1
+                if ref_index ==  4:
+                    ref_index = 0
+                    input_index += 1
 
 def transform_pixel_to_sample_array(unit_equation_mapping):
     top_samples = []
@@ -1085,7 +1093,7 @@ def generate_samples_buffer(seed, samples_size_top, samples_size_left):
     return top_samples, left_samples
 
 
-def generate_mapping_states(output_state_mapping, input_state_mapping, parallel_modes_list, modes, angles, nTbW, nTbH, index_x, index_y, subset_size_x, subset_size_y, final_index_x, final_index_y,iterations, coefficients_table):
+def generate_mapping_states(output_state_mapping, input_state_mapping, parallel_modes_list, modes, angles, nTbW, nTbH, index_x, index_y, subset_size_x, subset_size_y, iterations, coefficients_table):
     equations_constants_set = set()
     equations_constants_samples_set = set()
     equations_constants_reuse_map = {}
@@ -1148,7 +1156,7 @@ def generate_mapping_states(output_state_mapping, input_state_mapping, parallel_
     return output_state_mapping, input_state_mapping, control_list
 
 
-#GERADO POR DEEPSEEK
+#################### DEEPSEEK GENERATED ################################
 def compare_files(file1_path, file2_path, output_path):
     try:
         with open(file1_path, 'r') as file1, open(file2_path, 'r') as file2:
@@ -1168,7 +1176,7 @@ def compare_files(file1_path, file2_path, output_path):
         line1 = lines1[i].rstrip() if i < len(lines1) else None
         line2 = lines2[i].rstrip() if i < len(lines2) else None
 
-        if line1 == line2:
+        if "elsif" in line1 or line1 == line2:
             # Se encontramos linha igual, finaliza qualquer bloco de diferença existente
             if in_difference_block:
                 output_lines.append("#if VERSION1\n")
@@ -1179,7 +1187,7 @@ def compare_files(file1_path, file2_path, output_path):
                 version1_lines = []
                 version2_lines = []
                 in_difference_block = False
-            output_lines.append(f"{line1}\n" if line1 is not None else "\n")
+            output_lines.append(f"{line2}\n" if line2 is not None else "\n")
         else:
             # Começa novo bloco de diferença se não estivermos em um
             if not in_difference_block:
@@ -1197,6 +1205,97 @@ def compare_files(file1_path, file2_path, output_path):
         output_lines.extend(version1_lines)
         output_lines.append("#else  // VERSION2\n")
         output_lines.extend(version2_lines)
+        output_lines.append("#endif\n")
+
+    try:
+        with open(output_path, 'w') as output_file:
+            output_file.writelines(output_lines)
+        print(f"Arquivo de saída gerado com sucesso: {output_path}")
+    except IOError as e:
+        print(f"Erro ao escrever arquivo de saída: {e}")
+
+
+def delete_dontcare_lines(file, out_file):
+    try:
+        with open(file, 'r') as f, open(out_file, 'w') as o:
+            for line in f:
+                if "--------" not in line:
+                    o.write(line)
+    except FileNotFoundError as e:
+        print(f"Erro ao abrir arquivos: {e}")
+        return
+
+
+
+
+
+
+
+
+
+
+#################### DEEPSEEK GENERATED ################################
+def compare_three_files(file1_path, file2_path, file3_path, output_path):
+    try:
+        with open(file1_path, 'r') as file1, \
+                open(file2_path, 'r') as file2, \
+                open(file3_path, 'r') as file3:
+            lines1 = file1.readlines()
+            lines2 = file2.readlines()
+            lines3 = file3.readlines()
+    except FileNotFoundError as e:
+        print(f"Erro ao abrir arquivos: {e}")
+        return
+
+    max_lines = max(len(lines1), len(lines2), len(lines3))
+    output_lines = []
+    version1_lines = []
+    version2_lines = []
+    version3_lines = []
+    in_difference_block = False
+
+    for i in range(max_lines):
+        line1 = lines1[i].rstrip() if i < len(lines1) else None
+        line2 = lines2[i].rstrip() if i < len(lines2) else None
+        line3 = lines3[i].rstrip() if i < len(lines3) else None
+
+        # Verifica se todas as linhas são iguais
+        if line1 == line2 == line3:
+            if in_difference_block:
+                # Fecha o bloco de diferenças se existir
+                output_lines.append("#if VERSION1\n")
+                output_lines.extend(version1_lines)
+                output_lines.append("#elseif  // VERSION2\n")
+                output_lines.extend(version2_lines)
+                output_lines.append("#else  // VERSION3\n")
+                output_lines.extend(version3_lines)
+                output_lines.append("#endif\n")
+                version1_lines = []
+                version2_lines = []
+                version3_lines = []
+                in_difference_block = False
+            output_lines.append(f"{line1}\n" if line1 is not None else "\n")
+        else:
+            # Começa novo bloco de diferença se não estivermos em um
+            if not in_difference_block:
+                in_difference_block = True
+
+            # Armazena as linhas diferentes
+            if line1 is not None:
+                version1_lines.append(f"{line1}\n")
+            if line2 is not None:
+                version2_lines.append(f"{line2}\n")
+            if line3 is not None:
+                version3_lines.append(f"{line3}\n")
+
+    # Processa qualquer bloco de diferença pendente no final do arquivo
+    if in_difference_block:
+        output_lines.append("#if VERSION1\n")
+        output_lines.extend(version1_lines)
+        output_lines.append("#elseif  // VERSION2\n")
+        output_lines.extend(version2_lines)
+        output_lines.append("#else  // VERSION3\n")
+        output_lines.extend(version3_lines)
         output_lines.append("#endif\n")
 
     try:

@@ -603,7 +603,7 @@ def simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, 
     subset_size_x = subset_size_y = 4
 
     output_state_mapping, input_state_mapping, control_list = gen.generate_mapping_states(output_state_mapping, input_state_mapping, parallel_modes_list, modes, angles, nTbW, nTbH, index_x, index_y,
-                            subset_size_x, subset_size_y, final_index_x, final_index_y, iterations, coefficients_table)
+                            subset_size_x, subset_size_y, iterations, coefficients_table)
 
     gen.generate_angular_mode_mapping(output_file, output_state_mapping, int(final_index_x / subset_size_x),
                                       int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
@@ -617,11 +617,100 @@ def simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, 
         gen.generate_control_sequence_file(control_file, control_sequence, "fc",
                                        (int(index_x / subset_size_x), int(index_y / subset_size_y), i),
                                        int(final_index_x / subset_size_x),
-                                       int(final_index_y / subset_size_y), len(parallel_modes_list))
+                                       int(final_index_y / subset_size_y), len(parallel_modes_list), n)
 
     input_file.close()
     output_file.close()
     control_file.close()
+
+
+def simulate_16x16_32x32_64x64_blocks(modes, angles, parallel_modes_list, coefficients_table):
+
+    nTbW = nTbH = 16
+    input_file = open("input_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    output_file = open("output_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    control_file = open("control_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    simulate_16x16_block(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, 0, 0, 16, 16, input_file, output_file, control_file, dontcare_fill = False, dont_care_fill_number = 147)
+    input_file.close()
+    output_file.close()
+    control_file.close()
+
+    nTbW = nTbH = 32
+    input_file = open("input_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    output_file = open("output_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    control_file = open("control_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    simulate_16x16_block(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, 0, 0, 32, 32, input_file, output_file, control_file, dontcare_fill = False, dont_care_fill_number = 147)
+    input_file.close()
+    output_file.close()
+    control_file.close()
+
+    nTbW = nTbH = 64
+    input_file = open("input_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    output_file = open("output_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    control_file = open("control_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    simulate_16x16_block(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, 0, 0, 64, 64, input_file,
+                         output_file, control_file, dontcare_fill = False, dont_care_fill_number = 147)
+    input_file.close()
+    output_file.close()
+    control_file.close()
+
+    '''nTbW = nTbH = 32
+    #Generate first quadrant only of 32x32 block
+    input_file = open("first_quad_input_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    output_file = open("first_quad_output_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    control_file = open("first_quad_control_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    simulate_16x16_block(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, 0, 0, 16, 16, input_file,
+                         output_file, control_file)
+
+    input_file.close()
+    output_file.close()
+    control_file.close()'''
+
+    '''nTbW = nTbH = 64
+    # Generate first quadrant only of 64x64 block
+    input_file = open("first_quad_input_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    output_file = open("first_quad_output_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    control_file = open("first_quad_control_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+    simulate_16x16_block(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, 0, 0, 32, 32, input_file,
+                         output_file, control_file)
+
+    input_file.close()
+    output_file.close()
+    control_file.close()'''
+
+
+
+def simulate_16x16_block(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y, final_index_x, final_index_y, input_file, output_file, control_file, dontcare_fill = False, dont_care_fill_number = 0):
+    size = len(parallel_modes_list)
+    control_size = int(mh.log2(size))
+    iterations = int(len(parallel_modes_list))
+    subset_size_x = subset_size_y = 16
+
+
+    output_state_mapping = {}
+    input_state_mapping = {}
+    control_list = []
+    for x in range(index_x, final_index_x, subset_size_x):
+        for y in range(index_y, final_index_y, subset_size_y):
+            output_state_mapping, input_state_mapping, control_list = gen.generate_mapping_states(output_state_mapping, input_state_mapping, parallel_modes_list, modes, angles, nTbW, nTbH, x, y,
+                                    subset_size_x, subset_size_y, iterations, coefficients_table)
+
+
+    gen.generate_angular_mode_mapping(output_file, output_state_mapping, int(final_index_x/ subset_size_x),
+                                      int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
+                                      subset_size_y)
+
+    gen.generate_angular_input_mapping(input_file, input_state_mapping, int(final_index_x / subset_size_x),
+                                   int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
+                                   subset_size_y, dontcare_fill = dontcare_fill, dont_care_fill_number = dont_care_fill_number)
+
+    for control_sequence, i in zip(control_list, range(len(control_list))):
+        gen.generate_control_sequence_file(control_file, control_sequence, "fc",
+                                       (int(index_x / subset_size_x), int(index_y / subset_size_y), i),
+                                       int(final_index_x / subset_size_x),
+                                       int(final_index_y / subset_size_y), len(parallel_modes_list))
+
+
 
 
 

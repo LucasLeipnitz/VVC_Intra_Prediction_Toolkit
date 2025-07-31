@@ -204,3 +204,9 @@ def generate_output(f, base, angle, size, input, filterFlag):
         iFact = ((y + 1) * angle) & 31
         f.write(str(calculate_pred_y(input, x_base, iIdx, iFact, filterFlag)) + "\n")
         # print(str(calculate_pred_y(input,x_base,iIdx,iFact, filterFlag)) + "\n")
+
+
+'''            for mode, angle in zip(modes, angles):
+                equations, equations_set = gen.calculate_equations(mode, angle, block_size, "fc_heuristic", 1)
+                sorted_equations_set = gen.generate_sorted_equations_set(equations_set, True)
+                gen.generate_control_sequence(sorted_equations_set,True)'''
