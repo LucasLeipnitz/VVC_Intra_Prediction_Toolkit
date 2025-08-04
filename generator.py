@@ -989,11 +989,22 @@ def generate_angular_input_mapping(f, state_mapping, size_x, size_y, iteration_s
         #print(states)
         for state in states:
             if not iteration_only:
-                if_string += " " + '"' + str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x)))) + str(
-                    bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y)))) + str(
-                    bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
+                if_string += " " + '"'
+                if size_x != 1:
+                    if_string += str(bin(state[0])[2:].zfill(mh.ceil(mh.log2(size_x))))
+
+                if size_y != 1:
+                    if_string += str(bin(state[1])[2:].zfill(mh.ceil(mh.log2(size_y))))
+
+                if iteration_size != 1:
+                    if_string += str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size))))
+                if_string += '"' + " or control ="
             else:
-                if_string += " " + '"' + str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size)))) + '"' + " or control ="
+
+                if iteration_size != 1:
+                    print("interation", iteration_size)
+                    if_string += " " + '"' + str(bin(state[2])[2:].zfill(mh.ceil(mh.log2(iteration_size))))
+                if_string += '"' + " or control ="
 
         if_string = if_string[:-12]
         if_string += "then\n"

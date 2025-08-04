@@ -5,28 +5,29 @@ from transform_block import TransformBlock
 
 path_input_modes = "./input/modes/"
 
-option = 4
-input_modes = gen.all_modes
+option = 2
+#input_modes = gen.all_modes
 #input_modes = [34,35,37]
 #input_modes = [2,3,4,5,6,7]
 #parallel_modes_list = [2,2,2]
-#input_modes = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] #Waip
+input_modes = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] #Waip
 #input_modes = [53,54,55,56,57,58,59,60,61,62,63,64,65,66] #Waip
-#parallel_modes_list = [5,24,2,4,5,25] #otimo 4x4
-#parallel_modes_list = [16,9,3,3,2,3,5,24] #otimo 64x64
-#parallel_modes_list = [len(input_modes)]
+modes1 = [53,54,55,56,57,58,59,60,61,62,63,64,65,66]
+modes2 = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+parallel_modes_list = [4,6,4] #Waip 64x4
+#parallel_modes_list = [int(len(input_modes))] #Waip 8x4 e 4x8
 #parallel_modes_list = [1 for i in range(int(len(input_modes)))]
 #parallel_modes_list = [8, 12, 3, 2, 3, 2, 1, 3, 1, 2, 3, 2, 3, 12, 8] #para 32x32
-parallel_modes_list = [6, 6, 8, 3, 3, 2, 3, 2, 1, 3, 2, 3, 3, 8, 6, 6] #para 16x16
+#parallel_modes_list = [6, 6, 8, 3, 3, 2, 3, 2, 1, 3, 2, 3, 3, 8, 6, 6] #para 16x16
 #parallel_modes_list = [20, 9, 4, 3, 9, 20] #para 4x4
 
 buffer_type = -1
 global_buffer_type = 1
 block_size = 64
-nTbW = 64
-nTbH = 64
-subset_size_x = 16
-subset_size_y = 16
+nTbW = 32
+nTbH = 16
+subset_size_x = 8
+subset_size_y = 4
 #subset_size_y = subset_size_x #blocos quadrados
 assert_equals = 0
 normalize = False	
@@ -59,14 +60,17 @@ def main(modes, control = -1):
                 equations, equations_constants_reuse, equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map = gen.calculate_equations(mode, angle, nTbW, nTbH, "fc_heuristic", equations_constants_set, equations_constants_samples_set, equations_constants_reuse_map, index_x = 0, index_y = 0, subset_size_x = subset_size_x, subset_size_y = subset_size_y, refidx = 0, cidx = 0, samples = samples_on, reuse = reuse_on, create_table = True)
 
         case 2:
-            #sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 64, 64, subset_size_x, subset_size_y, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
+            #sim.simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 32, 16, subset_size_x, subset_size_y, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = buffer_type, global_buffer_type = global_buffer_type)
             #sim.simulate_number_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_parallel_architecture_32x32(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_parallel_architecture_64x64(modes, angles, parallel_modes_list, 120, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #sim.simulate_list_of_states(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 4, 4, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on)
             #gen.angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, 0, 0, 8, 8, subset_size_x, subset_size_y, refidx = 0, samples_on = samples_on , reuse_on = reuse_on, coefficients_table = filter_column_list)
             #sim.simulate_4x4_n_blocks(modes, angles, parallel_modes_list, coefficients_table = filter_column_list)
-            sim.simulate_16x16_32x32_64x64_blocks(modes, angles, parallel_modes_list, filter_column_list)
+            #sim.simulate_16x16_32x32_64x64_blocks(modes, angles, parallel_modes_list, filter_column_list)
+            #sim.simulate_8x4_16x4_16x8_32x16_32x8_32x4_blocks(modes, angles, parallel_modes_list, filter_column_list)
+            #sim.simulate_4x8_4x16_8x16_16x32_8x32_4x32_blocks(modes, angles, parallel_modes_list, filter_column_list)
+            sim.simulate_64x32_64x16_64x8_64x4_4x64_8x64_16x64_32x64_blocks(modes1, modes2, angles, parallel_modes_list, filter_column_list)
         case 3:
             gen.calculate_iidx_ifact(modes, angles, block_size, heuristic_on, n_average_fc)
         case 4:

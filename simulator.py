@@ -625,7 +625,6 @@ def simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, 
 
 
 def simulate_16x16_32x32_64x64_blocks(modes, angles, parallel_modes_list, coefficients_table):
-
     nTbW = nTbH = 16
     input_file = open("input_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
     output_file = open("output_16x16_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
@@ -679,12 +678,206 @@ def simulate_16x16_32x32_64x64_blocks(modes, angles, parallel_modes_list, coeffi
     control_file.close()'''
 
 
+def simulate_8x4_16x4_16x8_32x16_32x8_32x4_blocks(modes, angles, parallel_modes_list, coefficients_table):
 
-def simulate_16x16_block(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y, final_index_x, final_index_y, input_file, output_file, control_file, dontcare_fill = False, dont_care_fill_number = 0):
+    nTbW_nTbH_list = [(8,4),(16,4),(16,8),(32,4),(32,8),(32,16)]
+    #nTbW_nTbH_list = [(16, 4), (16, 8)]
+    merged_input_state_mapping = {}
+    merged_output_state_mapping = {}
+    block_type_index = 0
+    for nTbW,nTbH in nTbW_nTbH_list:
+        input_file = open("input_8x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        output_file = open("output_8x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        control_file = open("control_8x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        input_state_mapping, output_state_mapping = simulate_waip_modes(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, 0, 0, nTbW, nTbH, input_file, output_file, control_file, 0, dontcare_fill = False, dont_care_fill_number = 147)
+        input_file.close()
+        output_file.close()
+        control_file.close()
+
+        for key, value in zip(input_state_mapping.keys(), input_state_mapping.values()):
+            if key not in merged_input_state_mapping.keys():
+                merged_input_state_mapping[key] = [(block_type_index, value[0][0], value[0][1])]
+            else:
+                merged_input_state_mapping[key].append((block_type_index, value[0][0], value[0][1]))
+
+        for key, value in zip(output_state_mapping.keys(), output_state_mapping.values()):
+            if key not in merged_output_state_mapping.keys():
+                merged_output_state_mapping[key] = [(block_type_index, value[0][0], value[0][1])]
+            else:
+                merged_output_state_mapping[key].append((block_type_index, value[0][0], value[0][1]))
+
+        block_type_index += 1
+
+    input_file = open("input_8x4_merged.txt", "w")
+    output_file = open("output_8x4_merged.txt", "w")
+    #control_file = open("control_8x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+
+    final_index_x = 32
+    final_index_y = 16
+    subset_size_x = 8
+    subset_size_y = 4
+
+    states_list = [item for sublist in merged_input_state_mapping.values() for item in sublist]  # list comprehension
+    first_bit_size, second_bit_size, third_bit_size = zip(*states_list)
+
+    gen.generate_angular_input_mapping(input_file, merged_input_state_mapping, max(first_bit_size),
+                                       max(second_bit_size), max(third_bit_size), subset_size_x,
+                                       subset_size_y, dontcare_fill= False)
+
+    gen.generate_angular_mode_mapping(output_file, merged_output_state_mapping, max(first_bit_size),
+                                       max(second_bit_size), max(third_bit_size), subset_size_x,
+                                      subset_size_y)
+    input_file.close()
+    output_file.close()
+    #control_file.close()
+
+def simulate_4x8_4x16_8x16_16x32_8x32_4x32_blocks(modes, angles, parallel_modes_list, coefficients_table):
+
+    nTbW_nTbH_list = [(4,8),(4,16),(8,16),(16,32),(8,32),(4,32)]
+    merged_input_state_mapping = {}
+    merged_output_state_mapping = {}
+    block_type_index = 0
+    for nTbW,nTbH in nTbW_nTbH_list:
+        input_file = open("input_4x8_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        output_file = open("output_4x8_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        control_file = open("control_4x8_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        input_state_mapping, output_state_mapping = simulate_waip_modes(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, 0, 0, nTbW, nTbH, input_file, output_file, control_file, 2, dontcare_fill = False, dont_care_fill_number = 147)
+        input_file.close()
+        output_file.close()
+        control_file.close()
+
+        for key, value in zip(input_state_mapping.keys(), input_state_mapping.values()):
+            if key not in merged_input_state_mapping.keys():
+                merged_input_state_mapping[key] = [(block_type_index, value[0][0], value[0][1])]
+            else:
+                merged_input_state_mapping[key].append((block_type_index, value[0][0], value[0][1]))
+
+        for key, value in zip(output_state_mapping.keys(), output_state_mapping.values()):
+            if key not in merged_output_state_mapping.keys():
+                merged_output_state_mapping[key] = [(block_type_index, value[0][0], value[0][1])]
+            else:
+                merged_output_state_mapping[key].append((block_type_index, value[0][0], value[0][1]))
+
+        block_type_index += 1
+
+    states_list = [item for sublist in merged_input_state_mapping.values() for item in sublist]  # list comprehension
+    first_bit_size, second_bit_size, third_bit_size = zip(*states_list)
+
+    input_file = open("input_4x8_merged.txt", "w")
+    output_file = open("output_4x8_merged.txt", "w")
+    #control_file = open("control_8x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+
+    final_index_x = 16
+    final_index_y = 32
+    subset_size_x = 4
+    subset_size_y = 8
+    gen.generate_angular_input_mapping(input_file, merged_input_state_mapping, max(first_bit_size),
+                                       max(second_bit_size), max(third_bit_size), subset_size_x,
+                                       subset_size_y, dontcare_fill= False)
+
+    gen.generate_angular_mode_mapping(output_file, merged_output_state_mapping, max(first_bit_size),
+                                       max(second_bit_size), max(third_bit_size), subset_size_x,
+                                      subset_size_y)
+    input_file.close()
+    output_file.close()
+    #control_file.close()
+
+def simulate_64x32_64x16_64x8_64x4_4x64_8x64_16x64_32x64_blocks(modes1, modes2, angles, parallel_modes_list, coefficients_table):
+
+    nTbW_nTbH_list = [(4,64),(8,64),(16,64),(32,64)]
+    merged_input_state_mapping = {}
+    merged_output_state_mapping = {}
+    block_type_index = 0
+    for nTbW,nTbH in nTbW_nTbH_list:
+        input_file = open("input_32x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        output_file = open("output_32x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        control_file = open("control_32x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        input_state_mapping, output_state_mapping = simulate_waip_modes(modes1, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, 0, 0, nTbW, nTbH, input_file, output_file, control_file, 3, dontcare_fill = False, dont_care_fill_number = 147)
+        input_file.close()
+        output_file.close()
+        control_file.close()
+
+        for key, value in zip(input_state_mapping.keys(), input_state_mapping.values()):
+            if key not in merged_input_state_mapping.keys():
+                merged_input_state_mapping[key] = [(block_type_index, value[0][0], value[0][1], value[0][2])]
+            else:
+                merged_input_state_mapping[key].append((block_type_index, value[0][0], value[0][1], value[0][2]))
+
+        for key, value in zip(output_state_mapping.keys(), output_state_mapping.values()):
+            if key not in merged_output_state_mapping.keys():
+                merged_output_state_mapping[key] = [(block_type_index, value[0][0], value[0][1], value[0][2])]
+            else:
+                merged_output_state_mapping[key].append((block_type_index, value[0][0], value[0][1], value[0][2]))
+
+        block_type_index += 1
+
+    nTbW_nTbH_list = [(64, 4), (64, 8), (64, 16), (64, 32)]
+    for nTbW, nTbH in nTbW_nTbH_list:
+        input_file = open("input_32x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        output_file = open("output_32x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        control_file = open("control_32x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+        input_state_mapping, output_state_mapping = simulate_waip_modes(modes2, angles, parallel_modes_list,
+                                                                        coefficients_table, nTbW, nTbH, 0, 0, nTbW,
+                                                                        nTbH, input_file, output_file, control_file, 1,
+                                                                        dontcare_fill=False, dont_care_fill_number=147)
+        input_file.close()
+        output_file.close()
+        control_file.close()
+
+        for key, value in zip(input_state_mapping.keys(), input_state_mapping.values()):
+            if key not in merged_input_state_mapping.keys():
+                merged_input_state_mapping[key] = [(block_type_index, value[0][0], value[0][1], value[0][2])]
+            else:
+                merged_input_state_mapping[key].append((block_type_index, value[0][0], value[0][1], value[0][2]))
+
+        for key, value in zip(output_state_mapping.keys(), output_state_mapping.values()):
+            if key not in merged_output_state_mapping.keys():
+                merged_output_state_mapping[key] = [(block_type_index, value[0][0], value[0][1], value[0][2])]
+            else:
+                merged_output_state_mapping[key].append((block_type_index, value[0][0], value[0][1], value[0][2]))
+
+        block_type_index += 1
+
+
+    input_file = open("input_32x4_merged.txt", "w")
+    output_file = open("output_32x4_merged.txt", "w")
+    #control_file = open("control_8x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
+
+    final_index_x = 64
+    final_index_y = 64
+    subset_size_x = 4
+    subset_size_y = 4
+    gen.generate_angular_input_mapping(input_file, merged_input_state_mapping, int(final_index_x / subset_size_x),
+                                       int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
+                                       subset_size_y, dontcare_fill= False)
+
+    gen.generate_angular_mode_mapping(output_file, merged_output_state_mapping, int(final_index_x / subset_size_x),
+                                      int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
+                                      subset_size_y)
+    input_file.close()
+    output_file.close()
+    #control_file.close()
+
+
+def simulate_waip_modes(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y, final_index_x, final_index_y, input_file, output_file, control_file, waip_type, dontcare_fill = False, dont_care_fill_number = 0):
     size = len(parallel_modes_list)
-    control_size = int(mh.log2(size))
     iterations = int(len(parallel_modes_list))
-    subset_size_x = subset_size_y = 16
+    match waip_type:
+        case 0:
+            subset_size_x = 8
+            subset_size_y = 4
+        case 1:
+            subset_size_x = 32
+            subset_size_y = 4
+        case 2:
+            subset_size_x = 4
+            subset_size_y = 8
+        case 3:
+            subset_size_x = 4
+            subset_size_y = 32
+        case _:
+            subset_size_x = 0
+            subset_size_y = 0
 
 
     output_state_mapping = {}
@@ -712,6 +905,7 @@ def simulate_16x16_block(modes, angles, parallel_modes_list, coefficients_table,
 
 
 
+    return input_state_mapping, output_state_mapping
 
 
 def simulate_Arq(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, samples_on, reuse_on, buffer_type = -1, refidx = 0, cidx = 0):
