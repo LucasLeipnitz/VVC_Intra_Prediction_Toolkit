@@ -136,14 +136,13 @@ def random_generate_input(f, mode, angle, base, size):
     return input, new_base
 
 
-def generate_output(f, tb, angle, initial_index_x, initial_index_y, final_index_x, final_index_y, top_samples, left_samples, filter_table):
+def generate_output(mode, tb, angle, initial_index_x, initial_index_y, final_index_x, final_index_y, top_samples, left_samples, filter_table):
     pred_result = []
     for y in range(initial_index_y, final_index_y):
         for x in range(initial_index_x, final_index_x):
             iIdx = ((y + 1) * angle) >> 5
             iFact = ((y + 1) * angle) & 31
             pred_result.append(calculate_pred_y(tb, x, iIdx, iFact, top_samples, left_samples, filter_table))
-            # print(str(calculate_pred_y(input,x_base,iIdx,iFact, filterFlag)) + "\n")
 
     return pred_result
 
@@ -167,6 +166,7 @@ def calculate_pred_y(tb, x, iIdx, iFact, top_samples, left_samples, filter_table
             throw_error("Undefined sample")
 
         pred += fT[i] * ref_value
+
 
     pred = clip1((pred + 32) >> 6)
     return pred

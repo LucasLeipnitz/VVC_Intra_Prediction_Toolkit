@@ -58,7 +58,7 @@ def simulate_ADIP(modes, angles, parallel_modes_list, nTbW, nTbH, subset_size, s
                         create_table=False)
 
                 # gen.generate_sorted_equations_set(equations_constants_set, True)
-                print("Subset:", index_x, index_y)
+                #print("Subset:", index_x, index_y)
                 print("Modes:", modes_subset)
                 # for equation in equations_constants_samples_set:
                 # print(equation)
@@ -177,6 +177,16 @@ def count_effective_and_reused_equations(cache, equations, mode):
 
     return len(effective_equation_set)
 
+def print_parallel_mode_list(modes, parallel_modes_list):
+    iterations = int(len(parallel_modes_list))
+    index = 0
+    for i in range(iterations):
+        parallel_modes_number = parallel_modes_list[i]
+        modes_subset = modes[index:index + parallel_modes_number]
+        print(modes_subset)
+        index += parallel_modes_number
+
+
 def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y, final_index_x, final_index_y, subset_size_x, subset_size_y, samples_on, reuse_on, refidx = 0, cidx = 0, buffer_type = -1, global_buffer_type = -1):
     pred_cache = cache_c(int((nTbH/subset_size_y)/2))
     iterations = int(len(parallel_modes_list))
@@ -275,7 +285,7 @@ def simulate_ADIP_IB(modes, angles, parallel_modes_list, nTbW, nTbH, initial_ind
 
                 # gen.generate_sorted_equations_set(equations_constants_set, True)
                 #print("Subset:", index_x, index_y)
-                #print("Modes:", modes_subset)
+                print("Modes:", modes_subset)
                 '''for equation in equations_constants_samples_set:
                     print(equation)'''
                 #size = len(equations_constants_samples_set - global_samples_buffer)
@@ -576,8 +586,8 @@ def simulate_4x4_n_blocks(modes, angles, parallel_modes_list, coefficients_table
 
     index_x = 0
     index_y = 0
-    final_index_x = 8
-    final_index_y = 8
+    final_index_x = 4
+    final_index_y = 4
     simulate_4x4_blocks(modes, angles, parallel_modes_list, coefficients_table, nTbW, nTbH, index_x, index_y,
                         final_index_x, final_index_y, 4)
 
@@ -767,8 +777,6 @@ def simulate_4x8_4x16_8x16_16x32_8x32_4x32_blocks(modes, angles, parallel_modes_
     output_file = open("output_4x8_merged.txt", "w")
     #control_file = open("control_8x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
 
-    final_index_x = 16
-    final_index_y = 32
     subset_size_x = 4
     subset_size_y = 8
     gen.generate_angular_input_mapping(input_file, merged_input_state_mapping, max(first_bit_size),
@@ -787,7 +795,8 @@ def simulate_64x32_64x16_64x8_64x4_4x64_8x64_16x64_32x64_blocks(modes1, modes2, 
     nTbW_nTbH_list = [(4,64),(8,64),(16,64),(32,64)]
     merged_input_state_mapping = {}
     merged_output_state_mapping = {}
-    block_type_index = 0
+    block_type_index_input = 0
+    block_type_index_output = 0
     for nTbW,nTbH in nTbW_nTbH_list:
         input_file = open("input_32x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
         output_file = open("output_32x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
@@ -799,17 +808,17 @@ def simulate_64x32_64x16_64x8_64x4_4x64_8x64_16x64_32x64_blocks(modes1, modes2, 
 
         for key, value in zip(input_state_mapping.keys(), input_state_mapping.values()):
             if key not in merged_input_state_mapping.keys():
-                merged_input_state_mapping[key] = [(block_type_index, value[0][0], value[0][1], value[0][2])]
+                merged_input_state_mapping[key] = [block_type_index_input]
             else:
-                merged_input_state_mapping[key].append((block_type_index, value[0][0], value[0][1], value[0][2]))
+                merged_input_state_mapping[key].append(block_type_index_input)
+            block_type_index_input += 1
 
         for key, value in zip(output_state_mapping.keys(), output_state_mapping.values()):
             if key not in merged_output_state_mapping.keys():
-                merged_output_state_mapping[key] = [(block_type_index, value[0][0], value[0][1], value[0][2])]
+                merged_output_state_mapping[key] = [block_type_index_output]
             else:
-                merged_output_state_mapping[key].append((block_type_index, value[0][0], value[0][1], value[0][2]))
-
-        block_type_index += 1
+                merged_output_state_mapping[key].append(block_type_index_output)
+            block_type_index_output += 1
 
     nTbW_nTbH_list = [(64, 4), (64, 8), (64, 16), (64, 32)]
     for nTbW, nTbH in nTbW_nTbH_list:
@@ -826,34 +835,27 @@ def simulate_64x32_64x16_64x8_64x4_4x64_8x64_16x64_32x64_blocks(modes1, modes2, 
 
         for key, value in zip(input_state_mapping.keys(), input_state_mapping.values()):
             if key not in merged_input_state_mapping.keys():
-                merged_input_state_mapping[key] = [(block_type_index, value[0][0], value[0][1], value[0][2])]
+                merged_input_state_mapping[key] = [block_type_index_input]
             else:
-                merged_input_state_mapping[key].append((block_type_index, value[0][0], value[0][1], value[0][2]))
+                merged_input_state_mapping[key].append(block_type_index_input)
+            block_type_index_input += 1
 
         for key, value in zip(output_state_mapping.keys(), output_state_mapping.values()):
             if key not in merged_output_state_mapping.keys():
-                merged_output_state_mapping[key] = [(block_type_index, value[0][0], value[0][1], value[0][2])]
+                merged_output_state_mapping[key] = [block_type_index_output]
             else:
-                merged_output_state_mapping[key].append((block_type_index, value[0][0], value[0][1], value[0][2]))
-
-        block_type_index += 1
+                merged_output_state_mapping[key].append(block_type_index_output)
+            block_type_index_output += 1
 
 
     input_file = open("input_32x4_merged.txt", "w")
     output_file = open("output_32x4_merged.txt", "w")
     #control_file = open("control_8x4_" + str(nTbW) + 'x' + str(nTbH) + ".txt", "w")
 
-    final_index_x = 64
-    final_index_y = 64
-    subset_size_x = 4
+    subset_size_x = 32
     subset_size_y = 4
-    gen.generate_angular_input_mapping(input_file, merged_input_state_mapping, int(final_index_x / subset_size_x),
-                                       int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
-                                       subset_size_y, dontcare_fill= False)
-
-    gen.generate_angular_mode_mapping(output_file, merged_output_state_mapping, int(final_index_x / subset_size_x),
-                                      int(final_index_y / subset_size_y), len(parallel_modes_list), subset_size_x,
-                                      subset_size_y)
+    gen.generate_angular_input_mapping_by_sequence(input_file, merged_input_state_mapping, block_type_index_input)
+    gen.generate_angular_mode_mapping_by_sequence(output_file, merged_output_state_mapping, block_type_index_output, subset_size_x, subset_size_y)
     input_file.close()
     output_file.close()
     #control_file.close()

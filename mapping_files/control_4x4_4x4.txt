@@ -1,5 +1,5 @@
-	mapping_control <= "00000";
-	input_mapping_control <= "00000";
+	output_control <= "00000";
+	input_control <= "00000";
 	unit_control(0) <= "00";
 	unit_control(1) <= "00";
 	unit_control(2) <= "00";
@@ -17,8 +17,8 @@
 	unit_control(14) <= "00";
 	unit_control(15) <= "01";
 	wait for 5 ns;
-	mapping_control <= "00001";
-	input_mapping_control <= "00001";
+	output_control <= "00001";
+	input_control <= "00001";
 	unit_control(0) <= "01";
 	unit_control(1) <= "01";
 	unit_control(2) <= "01";
@@ -39,8 +39,8 @@
 	unit_control(17) <= "00";
 	unit_control(18) <= "01";
 	wait for 5 ns;
-	mapping_control <= "00010";
-	input_mapping_control <= "00010";
+	output_control <= "00010";
+	input_control <= "00010";
 	unit_control(0) <= "00";
 	unit_control(1) <= "00";
 	unit_control(2) <= "00";
@@ -66,8 +66,8 @@
 	unit_control(22) <= "00";
 	unit_control(23) <= "00";
 	wait for 5 ns;
-	mapping_control <= "00011";
-	input_mapping_control <= "00011";
+	output_control <= "00011";
+	input_control <= "00011";
 	unit_control(0) <= "00";
 	unit_control(1) <= "00";
 	unit_control(2) <= "00";
@@ -86,8 +86,8 @@
 	unit_control(15) <= "00";
 	unit_control(16) <= "00";
 	wait for 5 ns;
-	mapping_control <= "00100";
-	input_mapping_control <= "00100";
+	output_control <= "00100";
+	input_control <= "00100";
 	unit_control(0) <= "00";
 	unit_control(1) <= "00";
 	unit_control(2) <= "00";
@@ -108,8 +108,8 @@
 	unit_control(17) <= "01";
 	unit_control(18) <= "00";
 	wait for 5 ns;
-	mapping_control <= "00101";
-	input_mapping_control <= "00101";
+	output_control <= "00101";
+	input_control <= "00101";
 	unit_control(0) <= "01";
 	unit_control(1) <= "01";
 	unit_control(2) <= "01";

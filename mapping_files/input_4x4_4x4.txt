@@ -1,5 +1,5 @@
 
-elsif control = "00000" then
+elsif control = "000" then
 	input(0)(0) <= left_samples(0);
 	input(0)(1) <= left_samples(1);
 	input(0)(2) <= left_samples(2);
@@ -65,7 +65,7 @@ elsif control = "00000" then
 	input(15)(2) <= left_samples(0);
 	input(15)(3) <= left_samples(1);
 
-elsif control = "00001" then
+elsif control = "001" then
 	input(0)(0) <= top_samples(4);
 	input(0)(1) <= top_samples(0);
 	input(0)(2) <= left_samples(0);
@@ -143,7 +143,7 @@ elsif control = "00001" then
 	input(18)(2) <= top_samples(2);
 	input(18)(3) <= top_samples(0);
 
-elsif control = "00010" then
+elsif control = "010" then
 	input(0)(0) <= top_samples(1);
 	input(0)(1) <= top_samples(0);
 	input(0)(2) <= left_samples(0);
@@ -241,7 +241,7 @@ elsif control = "00010" then
 	input(23)(2) <= left_samples(1);
 	input(23)(3) <= left_samples(0);
 
-elsif control = "00011" then
+elsif control = "011" then
 	input(0)(0) <= left_samples(0);
 	input(0)(1) <= top_samples(0);
 	input(0)(2) <= top_samples(1);
@@ -311,7 +311,7 @@ elsif control = "00011" then
 	input(16)(2) <= top_samples(0);
 	input(16)(3) <= top_samples(1);
 
-elsif control = "00100" then
+elsif control = "100" then
 	input(0)(0) <= left_samples(1);
 	input(0)(1) <= top_samples(0);
 	input(0)(2) <= top_samples(1);
@@ -389,7 +389,7 @@ elsif control = "00100" then
 	input(18)(2) <= top_samples(1);
 	input(18)(3) <= top_samples(2);
 
-elsif control = "00101" then
+elsif control = "101" then
 	input(0)(0) <= left_samples(3);
 	input(0)(1) <= top_samples(0);
 	input(0)(2) <= top_samples(1);

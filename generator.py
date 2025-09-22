@@ -26,6 +26,10 @@ modes2 = [34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51
           61, 62, 63, 64, 65, 66]
 modes3 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
           31, 32, 33, 34]
+modes_test_1 = [47, 48, 49, 50, 51, 52, 53, 54]
+len_test_1 = len(modes_test_1)
+modes_test_2 = [36, 37, 38]
+len_test_2 = len(modes_test_2)
 '''modes3 = [2, 3, 7, 10, 18, 23, 26, 30, 33, 34, 35, 43, 46, 49, 50, 54]
 modes4 = [35]
 modes5 = [35, 54]
@@ -906,6 +910,42 @@ def generate_angular_mode_mapping(f, state_mapping, size_x, size_y, iteration_si
             if output_index ==  block_size_x*block_size_y:
                 output_index = 0
                 mode_index += 1
+
+def generate_angular_mode_mapping_by_sequence(f, state_mapping, size, block_size_x, block_size_y):
+    for equations, states in zip(state_mapping.keys(), state_mapping.values()):
+        output_index = 0
+        mode_index = 0
+        if_string = "\nelsif control ="
+        for sequence in states:
+            if_string += " " + '"' + str(bin(sequence)[2:].zfill(mh.ceil(mh.log2(size)))) + '"' + " or control ="
+        if_string = if_string[:-12]
+        if_string += "then\n"
+        f.write(if_string)
+        for equation in equations:
+            f.write("\toutput(" + str(mode_index) + ", " + str(output_index) + ") <= input(" + str(equation) + ");\n")
+            output_index += 1
+            if output_index ==  block_size_x*block_size_y:
+                output_index = 0
+                mode_index += 1
+
+def generate_angular_input_mapping_by_sequence(f, state_mapping, size):
+    #print(state_mapping.values())
+    for equations, states in zip(state_mapping.keys(), state_mapping.values()):
+        ref_index = 0
+        input_index = 0
+        if_string = "\nelsif control ="
+        #print(states)
+        for sequence in states:
+            if_string += " " + '"' + str(bin(sequence)[2:].zfill(mh.ceil(mh.log2(size)))) + '"' + " or control ="
+        if_string = if_string[:-12]
+        if_string += "then\n"
+        f.write(if_string)
+        for equation in equations:
+            f.write("\tinput(" + str(input_index) + ")(" + str(ref_index) + ") <= " + str(equation) + ";\n")
+            ref_index += 1
+            if ref_index == 4:
+                ref_index = 0
+                input_index += 1
 
 
 def angular_input_mapping(modes, angles, parallel_modes_list, nTbW, nTbH, initial_index_x, initial_index_y,
